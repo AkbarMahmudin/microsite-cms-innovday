@@ -11,8 +11,6 @@ import Typography from '@mui/material/Typography';
 // routes
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-// hooks
-import { useMockedUser } from 'src/hooks/use-mocked-user';
 // auth
 import { useAuthContext } from 'src/auth/hooks';
 // components
@@ -42,9 +40,7 @@ const OPTIONS = [
 export default function AccountPopover() {
   const router = useRouter();
 
-  const { user } = useMockedUser();
-
-  const { logout } = useAuthContext();
+  const { logout, user } = useAuthContext();
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -98,7 +94,7 @@ export default function AccountPopover() {
       <CustomPopover open={popover.open} onClose={popover.onClose} sx={{ width: 200, p: 0 }}>
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {user?.displayName}
+            {user?.name}
           </Typography>
 
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>

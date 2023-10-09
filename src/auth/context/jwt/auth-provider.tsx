@@ -89,7 +89,11 @@ export function AuthProvider({ children }: Props) {
       if (accessToken && isValidToken(accessToken)) {
         setSession(accessToken);
 
-        const res = await axios.get(endpoints.auth.me);
+        const res = (await axios.get(endpoints.auth.me, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })).data;
 
         const { user } = res.data;
 
@@ -129,9 +133,17 @@ export function AuthProvider({ children }: Props) {
       password,
     };
 
-    const res = await axios.post(endpoints.auth.login, data);
+    const res = (await axios.post(endpoints.auth.login, data)).data;
 
-    const { accessToken, user } = res.data;
+    const { access_token: accessToken } = res.data;
+
+    const resUser = (await axios.get(endpoints.auth.me, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })).data;
+
+    const { user } = resUser.data;
 
     setSession(accessToken);
 
@@ -144,30 +156,30 @@ export function AuthProvider({ children }: Props) {
   }, []);
 
   // REGISTER
-  const register = useCallback(
-    async (email: string, password: string, firstName: string, lastName: string) => {
-      const data = {
-        email,
-        password,
-        firstName,
-        lastName,
-      };
+  // const register = useCallback(
+  //   async (email: string, password: string, firstName: string, lastName: string) => {
+  //     // const data = {
+  //     //   email,
+  //     //   password,
+  //     //   firstName,
+  //     //   lastName,
+  //     // };
 
-      const res = await axios.post(endpoints.auth.register, data);
+  //     // const res = await axios.post(endpoints.auth.register, data);
 
-      const { accessToken, user } = res.data;
+  //     // const { accessToken, user } = res.data;
 
-      sessionStorage.setItem(STORAGE_KEY, accessToken);
+  //     // sessionStorage.setItem(STORAGE_KEY, accessToken);
 
-      dispatch({
-        type: Types.REGISTER,
-        payload: {
-          user,
-        },
-      });
-    },
-    []
-  );
+  //     // dispatch({
+  //     //   type: Types.REGISTER,
+  //     //   payload: {
+  //     //     user,
+  //     //   },
+  //     // });
+  //   },
+  //   []
+  // );
 
   // LOGOUT
   const logout = useCallback(async () => {
@@ -192,10 +204,10 @@ export function AuthProvider({ children }: Props) {
       unauthenticated: status === 'unauthenticated',
       //
       login,
-      register,
+      // register,
       logout,
     }),
-    [login, logout, register, state.user, status]
+    [login, logout, state.user, status]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;
