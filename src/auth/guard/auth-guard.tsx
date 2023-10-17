@@ -18,9 +18,10 @@ const loginPaths: Record<string, string> = {
 
 type Props = {
   children: React.ReactNode;
+  roles?: string[];
 };
 
-export default function AuthGuard({ children }: Props) {
+export default function AuthGuard({ children, roles }: Props) {
   const router = useRouter();
 
   const { authenticated, method } = useAuthContext();

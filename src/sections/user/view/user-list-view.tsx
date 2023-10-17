@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 // @mui
 import { alpha } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
@@ -39,7 +39,10 @@ import {
 } from 'src/components/table';
 // types
 import { IUserItem, IUserTableFilters, IUserTableFilterValue } from 'src/types/user';
+// api
+import { deleteUser, useGetUsers } from 'src/api/user';
 //
+import { useDebounce } from 'src/hooks/use-debounce';
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
@@ -50,8 +53,6 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
-  // { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-  // { id: 'company', label: 'Company', width: 220 },
   { id: 'role', label: 'Role', width: 180 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
@@ -74,26 +75,40 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(_userList);
-
   const [filters, setFilters] = useState(defaultFilters);
 
+  const filterDebounce = useDebounce(filters.name, 500);
+
+  const { users, meta } = useGetUsers({
+    name: filterDebounce,
+    limit: Number(table.rowsPerPage) || 5,
+    page: Number(table.page) + 1,
+  });
+
+  console.log('users from user list view: ', users);
+
   const dataFiltered = applyFilter({
-    inputData: tableData,
+    inputData: users,
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  const [dataInPage, setDataInPage] = useState(dataFiltered);
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+
+  // ----------------------------------------------------------------------
+
+  // useEffect(() => {
+  //   setusers(users);
+  //   setMetaData(meta);
+  // }, [table, users, meta, users, metaData]);
+
+  // ----------------------------------------------------------------------
 
   const handleFilters = useCallback(
     (name: string, value: IUserTableFilterValue) => {
@@ -106,34 +121,34 @@ export default function UserListView() {
     [table]
   );
 
+  // TODO: delete user
   const handleDeleteRow = useCallback(
-    (id: string) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-      setTableData(deleteRow);
+    async (id: number | string) => {
+      await deleteUser(Number(id));
+      users.filter((row) => Number(row.id) !== Number(id));
+      meta.total_data -= 1;
+      // setusers(rowDelete);
+      // console.log({ users });
 
-      table.onUpdatePageDeleteRow(dataInPage.length);
+      table.onUpdatePageDeleteRow(meta.total_data_per_page);
     },
-    [dataInPage.length, table, tableData]
+    [table, meta, users]
   );
 
   const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
-    setTableData(deleteRows);
+    users.filter((row) => !table.selected.includes(row.id));
 
     table.onUpdatePageDeleteRows({
-      totalRows: tableData.length,
+      totalRows: users.length,
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [dataFiltered.length, dataInPage.length, table, users]);
 
   const handleEditRow = useCallback(
-    (id: string) => {
-      router.push(paths.dashboard.user.edit(id));
-    },
+    (id: string) => router.push(paths.dashboard.user.edit(id)),
     [router]
   );
-
   const handleFilterStatus = useCallback(
     (event: React.SyntheticEvent, newValue: string) => {
       handleFilters('status', newValue);
@@ -236,11 +251,11 @@ export default function UserListView() {
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
-              rowCount={tableData.length}
+              rowCount={users.length}
               onSelectAllRows={(checked) =>
                 table.onSelectAllRows(
                   checked,
-                  tableData.map((row) => row.id)
+                  users.map((row) => row.id)
                 )
               }
               action={
@@ -258,37 +273,34 @@ export default function UserListView() {
                   order={table.order}
                   orderBy={table.orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={tableData.length}
+                  rowCount={users.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      tableData.map((row) => row.id)
+                      users.map((row) => row.id)
                     )
                   }
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <UserTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                      />
-                    ))}
+                  {dataFiltered.map((row) => (
+                    <UserTableRow
+                      key={row.id}
+                      row={row}
+                      selected={table.selected.includes(row.id as string)}
+                      onSelectRow={() => table.onSelectRow(row.id as string)}
+                      onDeleteRow={() => handleDeleteRow(row.id as string)}
+                      onEditRow={() => handleEditRow(row.id as string)}
+                    />
+                  ))}
 
                   <TableEmptyRows
                     height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                    emptyRows={
+                      !users.length ? emptyRows(table.page, table.rowsPerPage, users.length) : 0
+                    }
                   />
 
                   <TableNoData notFound={notFound} />
@@ -298,7 +310,7 @@ export default function UserListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={meta?.total_data || 5}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -370,7 +382,7 @@ function applyFilter({
   }
 
   if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.role));
+    inputData = inputData.filter((user) => role.includes(user.role.name));
   }
 
   return inputData;

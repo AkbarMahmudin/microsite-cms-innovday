@@ -66,7 +66,7 @@ export default function UserTableRow({
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{role}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{role.name}</TableCell>
 
         <TableCell>
           <Label

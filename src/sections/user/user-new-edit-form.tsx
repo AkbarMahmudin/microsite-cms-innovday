@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -20,19 +20,19 @@ import { useRouter } from 'src/routes/hooks';
 // types
 import { IUserItem } from 'src/types/user';
 // assets
-import { countries } from 'src/assets/data';
 // components
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
-  RHFSwitch,
   RHFTextField,
   RHFUploadAvatar,
   RHFAutocomplete,
 } from 'src/components/hook-form';
 import { IconButton, InputAdornment } from '@mui/material';
 import { useBoolean } from 'src/hooks/use-boolean';
+// api
+import { createUser, updateUser } from 'src/api/user';
 
 // ----------------------------------------------------------------------
 
@@ -55,30 +55,45 @@ export default function UserNewEditForm({ currentUser }: Props) {
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     role: Yup.string().required('Role is required'),
-    password: Yup.string().required('Password is required'),
+    password: currentUser ? Yup.string() : Yup.string().required('Password is required'),
     // not required
     avatarUrl: Yup.mixed<any>().nullable(),
     status: Yup.string(),
-    isVerified: Yup.boolean(),
+    // isVerified: Yup.boolean(),
   });
-
-  const defaultValues = useMemo(
-    () => ({
-      name: currentUser?.name || '',
-      role: currentUser?.role || '',
-      email: currentUser?.email || '',
-      status: currentUser?.status || '',
-      avatarUrl: currentUser?.avatarUrl || null,
-      isVerified: currentUser?.isVerified || true,
-      password: currentUser?.password || '',
-    }),
-    [currentUser]
-  );
+  
+  // const defaultValues = currentUser && {
+  //     name: currentUser?.name || '',
+  //     role: currentUser?.role.name || '',
+  //     email: currentUser?.email || '',
+  //     status: currentUser?.status || '',
+  //     avatarUrl: currentUser?.avatarUrl || null,
+  //     // isVerified: currentUser?.isVerified || true,
+  //     password: currentUser?.password || '',
+  //   };
 
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
-    defaultValues,
+    defaultValues: {
+      name: '',
+      role: '',
+      email: '',
+      status: '',
+      avatarUrl: '',
+      password: '',
+    },
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      methods.setValue('name', currentUser?.name || '');
+      methods.setValue('role', currentUser?.role.name || '');
+      methods.setValue('email', currentUser?.email || '');
+      methods.setValue('status', currentUser?.status || '');
+      methods.setValue('avatarUrl', currentUser?.avatarUrl || null);
+      methods.setValue('password', currentUser?.password || '');
+    }
+  }, [currentUser, methods]);
 
   const {
     reset,
@@ -93,6 +108,25 @@ export default function UserNewEditForm({ currentUser }: Props) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      delete data.avatarUrl;
+
+      // Create Or Update User
+      if (currentUser) {
+        await updateUser(Number(currentUser?.id), {
+          name: data.name,
+          email: data.email,
+          ...(data.password && { password: data.password }),
+          roleId: 4,
+        });
+      } else {
+        await createUser({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          roleId: 4,
+        });
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       enqueueSnackbar(currentUser ? 'Update success!' : 'Create success!');
@@ -100,6 +134,11 @@ export default function UserNewEditForm({ currentUser }: Props) {
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
+      if (typeof error.message === 'object') {
+        error.message.map((msg: string) => enqueueSnackbar(msg, { variant: 'error' }));
+      } else {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      }
     }
   });
 
@@ -117,6 +156,8 @@ export default function UserNewEditForm({ currentUser }: Props) {
     },
     [setValue]
   );
+
+  console.log('currentUser from user new edit form: ', currentUser);
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -230,42 +271,7 @@ export default function UserNewEditForm({ currentUser }: Props) {
                   ),
                 }}
               />
-              {/* <RHFTextField name="phoneNumber" label="Phone Number" /> */}
 
-              {/* <RHFAutocomplete
-                name="country"
-                label="Country"
-                options={countries.map((country) => country.label)}
-                getOptionLabel={(option) => option}
-                isOptionEqualToValue={(option, value) => option === value}
-                renderOption={(props, option) => {
-                  const { code, label, phone } = countries.filter(
-                    (country) => country.label === option
-                  )[0];
-
-                  if (!label) {
-                    return null;
-                  }
-
-                  return (
-                    <li {...props} key={label}>
-                      <Iconify
-                        key={label}
-                        icon={`circle-flags:${code.toLowerCase()}`}
-                        width={28}
-                        sx={{ mr: 1 }}
-                      />
-                      {label} ({code}) +{phone}
-                    </li>
-                  );
-                }}
-              /> */}
-
-              {/* <RHFTextField name="state" label="State/Region" />
-              <RHFTextField name="city" label="City" />
-              <RHFTextField name="address" label="Address" />
-              <RHFTextField name="zipCode" label="Zip/Code" />
-              <RHFTextField name="company" label="Company" /> */}
               <RHFAutocomplete
                 name="role"
                 label="Role"

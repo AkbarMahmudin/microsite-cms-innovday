@@ -56,7 +56,6 @@ export default function PostNewEditForm({ currentPost }: Props) {
   const preview = useBoolean();
 
   const [isPublished, setIsPublished] = useState(currentPost?.publish === 'published');
-  console.log('isPublished', isPublished);
 
   const NewBlogSchema = Yup.object().shape({
     title: Yup.string().required('Title is required'),

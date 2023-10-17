@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -8,20 +8,17 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-// _mock
-import { USER_STATUS_OPTIONS } from 'src/_mock';
 // types
 import { IUserItem } from 'src/types/user';
-// assets
-import { countries } from 'src/assets/data';
 // components
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import { useAuthContext } from 'src/auth/hooks';
+// api
+import { updateUser } from 'src/api/user';
 
 // ----------------------------------------------------------------------
 
@@ -37,6 +34,7 @@ type Props = {
 
 export default function UserQuickEditForm({ currentUser, open, onClose }: Props) {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -44,20 +42,22 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
     role: Yup.string().required('Role is required'),
   });
 
-  const defaultValues = useMemo(
-    () => ({
-      name: currentUser?.name || '',
-      email: currentUser?.email || '',
-      status: currentUser?.status,
-      role: currentUser?.role || '',
-    }),
-    [currentUser]
-  );
-
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
-    defaultValues,
+    defaultValues: {
+      name: '',
+      email: '',
+      role: '',
+    },
   });
+
+  useEffect(() => {
+    if (open && currentUser) {
+      methods.setValue('name', currentUser.name);
+      methods.setValue('email', currentUser.email);
+      methods.setValue('role', currentUser.role.name);
+    }
+  }, [currentUser, methods, open]);
 
   const {
     reset,
@@ -67,6 +67,12 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      await updateUser(Number(currentUser?.id), {
+        name: data.name,
+        email: data.email,
+        roleId: 4,
+      });
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
@@ -74,6 +80,11 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
+      if (typeof error.message === 'object') {
+        error.message.map((msg: string) => enqueueSnackbar(msg, { variant: 'error' }));
+      } else {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      }
     }
   });
 
@@ -116,26 +127,28 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
 
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
-            <RHFAutocomplete
-              name="role"
-              label="Role"
-              options={roles.map((role) => role)}
-              getOptionLabel={(option) => option}
-              isOptionEqualToValue={(option, value) => option === value}
-              renderOption={(props, option) => {
-                const roleName = roles.filter((role) => role === option)[0];
+            {user?.role.name === 'admin' && (
+              <RHFAutocomplete
+                name="role"
+                label="Role"
+                options={roles.map((role) => role)}
+                getOptionLabel={(option) => option}
+                isOptionEqualToValue={(option, value) => option === value}
+                renderOption={(props, option) => {
+                  const roleName = roles.filter((role) => role === option)[0];
 
-                if (!roleName) {
-                  return null;
-                }
+                  if (!roleName) {
+                    return null;
+                  }
 
-                return (
-                  <li {...props} key={roleName}>
-                    {roleName}
-                  </li>
-                );
-              }}
-            />
+                  return (
+                    <li {...props} key={roleName}>
+                      {roleName}
+                    </li>
+                  );
+                }}
+              />
+            )}
             {/* <RHFTextField name="phoneNumber" label="Phone Number" /> */}
 
             {/* <RHFAutocomplete

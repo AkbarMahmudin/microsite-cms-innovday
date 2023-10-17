@@ -6,22 +6,16 @@ import Container from '@mui/material/Container';
 import Tabs, { tabsClasses } from '@mui/material/Tabs';
 // routes
 import { paths } from 'src/routes/paths';
-// hooks
-import { useMockedUser } from 'src/hooks/use-mocked-user';
 // _mock
-import { _userAbout, _userFeeds, _userFriends, _userGallery, _userFollowers } from 'src/_mock';
+import { _userAbout } from 'src/_mock';
 // components
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
 import { Navigate } from 'react-router-dom';
-import { useGetPosts } from 'src/api/blog';
-import ProfileHome from '../profile-home';
+import { useAuthContext } from 'src/auth/hooks';
 import ProfileCover from '../profile-cover';
-import ProfileFriends from '../profile-friends';
-import ProfileGallery from '../profile-gallery';
-import ProfileFollowers from '../profile-followers';
 
 // ----------------------------------------------------------------------
 
@@ -53,20 +47,14 @@ const TABS = [
 export default function UserProfileView() {
   const settings = useSettingsContext();
 
-  const { user } = useMockedUser();
-
-  const [searchFriends, setSearchFriends] = useState('');
+  const { user } = useAuthContext();
 
   const [currentTab, setCurrentTab] = useState('profile');
 
-  const { posts, postsLoading } = useGetPosts();
+  // const { posts, postsLoading } = useGetPosts();
 
   const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
-  }, []);
-
-  const handleSearchFriends = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchFriends(event.target.value);
   }, []);
 
   return (
@@ -76,7 +64,7 @@ export default function UserProfileView() {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'User', href: paths.dashboard.user.root },
-          { name: user?.displayName },
+          { name: user?.name },
         ]}
         sx={{
           mb: { xs: 3, md: 5 },
@@ -90,8 +78,8 @@ export default function UserProfileView() {
         }}
       >
         <ProfileCover
-          role={_userAbout.role}
-          name={user?.displayName}
+          role={user?.role.name}
+          name={user?.name}
           avatarUrl={user?.photoURL}
           coverUrl={_userAbout.coverUrl}
         />
@@ -120,7 +108,7 @@ export default function UserProfileView() {
         </Tabs>
       </Card>
 
-      {currentTab === 'profile' && <ProfileHome info={_userAbout} posts={posts} />}
+      {/* {currentTab === 'profile' && <ProfileHome info={_userAbout} posts={posts} />} */}
 
       {currentTab === 'settings' && <Navigate to="/dashboard/user/account" />}
     </Container>

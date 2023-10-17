@@ -10,7 +10,7 @@ import { IPostItem } from 'src/types/blog';
 export function useGetPosts() {
   const URL = endpoints.post.list;
 
-  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+  const { data, isLoading, error, isValidating } = useSWR('https://api-dev-minimal-v510.vercel.app/api/post/list', fetcher);
 
   const memoizedValue = useMemo(
     () => ({
@@ -29,7 +29,7 @@ export function useGetPosts() {
 // ----------------------------------------------------------------------
 
 export function useGetPost(title: string) {
-  const URL = title ? [endpoints.post.details, { params: { title } }] : null;
+  const URL = title ? ['https://api-dev-minimal-v510.vercel.app/api/post/details', { params: { title } }] : null;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
 
@@ -49,7 +49,7 @@ export function useGetPost(title: string) {
 // ----------------------------------------------------------------------
 
 export function useGetLatestPosts(title: string) {
-  const URL = title ? [endpoints.post.latest, { params: { title } }] : null;
+  const URL = title ? ['https://api-dev-minimal-v510.vercel.app/api/post/latest', { params: { title } }] : null;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
 
@@ -70,7 +70,7 @@ export function useGetLatestPosts(title: string) {
 // ----------------------------------------------------------------------
 
 export function useSearchPosts(query: string) {
-  const URL = query ? [endpoints.post.search, { params: { query } }] : null;
+  const URL = query ? ['https://api-dev-minimal-v510.vercel.app/api/post/search', { params: { query } }] : null;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher, {
     keepPreviousData: true,

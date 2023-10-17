@@ -93,21 +93,16 @@ export type IUserCard = {
 };
 
 export type IUserItem = {
-  id: string;
+  id: string | number;
   name: string;
-  city: string;
-  role: string;
+  role: {
+    id: number;
+    name: string;
+  };
   email: string;
-  state: string;
   status: string;
-  address: string;
-  country: string;
-  zipCode: string;
-  // company: string;
-  avatarUrl: string;
-  // phoneNumber: string;
-  isVerified: boolean;
   password: string;
+  avatarUrl: string;
 };
 
 export type IUserAccount = {

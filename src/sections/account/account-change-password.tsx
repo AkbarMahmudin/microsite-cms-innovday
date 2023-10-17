@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
+import { updatePasswordMe } from 'src/api/user';
 // components
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
@@ -22,10 +23,10 @@ export default function AccountChangePassword() {
   const password = useBoolean();
 
   const ChangePassWordSchema = Yup.object().shape({
-    oldPassword: Yup.string().required('Old Password is required'),
+    currentPassword: Yup.string().required('Current Password is required'),
     newPassword: Yup.string()
       .required('New Password is required')
-      .min(6, 'Password must be at least 6 characters')
+      // .min(6, 'Password must be at least 6 characters')
       .test(
         'no-match',
         'New password must be different than old password',
@@ -35,7 +36,7 @@ export default function AccountChangePassword() {
   });
 
   const defaultValues = {
-    oldPassword: '',
+    currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
   };
@@ -53,12 +54,17 @@ export default function AccountChangePassword() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      await updatePasswordMe({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       enqueueSnackbar('Update success!');
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(error.message, { variant: 'error' });
     }
   });
 
@@ -66,9 +72,9 @@ export default function AccountChangePassword() {
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Stack component={Card} spacing={3} sx={{ p: 3 }}>
         <RHFTextField
-          name="oldPassword"
+          name="currentPassword"
           type={password.value ? 'text' : 'password'}
-          label="Old Password"
+          label="Current Password"
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -93,12 +99,6 @@ export default function AccountChangePassword() {
               </InputAdornment>
             ),
           }}
-          helperText={
-            <Stack component="span" direction="row" alignItems="center">
-              <Iconify icon="eva:info-fill" width={16} sx={{ mr: 0.5 }} /> Password must be minimum
-              6+
-            </Stack>
-          }
         />
 
         <RHFTextField
