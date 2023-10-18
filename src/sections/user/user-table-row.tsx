@@ -13,11 +13,11 @@ import { useBoolean } from 'src/hooks/use-boolean';
 // types
 import { IUserItem } from 'src/types/user';
 // components
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 //
+import { fDateTime } from 'src/utils/format-time';
 import UserQuickEditForm from './user-quick-edit-form';
 
 // ----------------------------------------------------------------------
@@ -37,7 +37,7 @@ export default function UserTableRow({
   onSelectRow,
   onDeleteRow,
 }: Props) {
-  const { name, avatarUrl, role, status, email } = row;
+  const { name, avatarUrl, role, email, createdAt } = row;
 
   const confirm = useBoolean();
 
@@ -68,19 +68,7 @@ export default function UserTableRow({
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{role.name}</TableCell>
 
-        <TableCell>
-          <Label
-            variant="soft"
-            color={
-              (status === 'active' && 'success') ||
-              (status === 'pending' && 'warning') ||
-              (status === 'banned' && 'error') ||
-              'default'
-            }
-          >
-            {status}
-          </Label>
-        </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDateTime(createdAt)}</TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
@@ -131,7 +119,11 @@ export default function UserTableRow({
         title="Delete"
         content="Are you sure want to delete?"
         action={
-          <Button variant="contained" color="error" onClick={onDeleteRow}>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={onDeleteRow}
+          >
             Delete
           </Button>
         }

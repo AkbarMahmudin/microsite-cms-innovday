@@ -103,6 +103,7 @@ export type IUserItem = {
   status: string;
   password: string;
   avatarUrl: string;
+  createdAt: Date;
 };
 
 export type IUserAccount = {

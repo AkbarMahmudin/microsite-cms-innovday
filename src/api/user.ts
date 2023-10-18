@@ -1,13 +1,24 @@
 import { useMemo } from 'react';
-import useSWR, { mutate, useSWRConfig } from 'swr';
+import useSWR, { mutate } from 'swr';
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 const URL = endpoints.user;
 const ACCESSTOKEN = sessionStorage.getItem('accessToken');
 
+const options = {
+  // revalidateOnFocus: true,
+  revalidateOnReconnect: true,
+  shouldRetryOnError: true,
+  refreshInterval: 5000,
+  revalidateOnMount: true,
+  dedupingInterval: 5000,
+  refreshWhenHidden: true,
+  refreshWhenOffline: true,
+};
+
 export const useGetUsers = (query: any) => {
   const URLList = query ? [URL.list, { params: query }] : URL.list;
-  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher);
+  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, options);
   const data = resData?.data;
   const meta = resData?.meta;
 
@@ -20,7 +31,7 @@ export const useGetUsers = (query: any) => {
       usersValidating: isValidating,
       usersEmpty: !isLoading && !data?.users.length,
     }),
-    [meta, data?.users, error, isLoading, isValidating]
+    [data?.users, error, isLoading, isValidating, meta]
   );
 
   return memoizedValue;
@@ -58,43 +69,38 @@ export const createUser = async (data: any) => {
 
 export const updateUser = async (id: number, data: any) => {
   const { update: URLUpdate } = URL;
+
+  mutate(
+    URL.list,
+    (currentData: any) => ({
+      ...currentData,
+      users: currentData?.users?.map((user: any) => (user.id === id ? { ...user, ...data } : user)),
+    }),
+    false
+  );
+
   const { data: res } = await axios.patch(`${URLUpdate}/${id}`, data, {
     headers: {
       Authorization: `Bearer ${ACCESSTOKEN}`,
     },
   });
 
-  const URLList = [
-    URL.list,
-    {
-      params: {
-        limit: 5,
-        page: 2,
-      },
-    },
-  ];
-
-  mutate(URLList, data, false);
-
   return res.data;
 };
 
 export const deleteUser = async (id: number) => {
   const { delete: URLDelete } = URL;
+
+  mutate(URL.list, (data: any) => ({
+    ...data,
+    users: data?.users?.filter((user: any) => user.id !== id),
+  }));
+
   const { data: res } = await axios.delete(`${URLDelete}/${id}`, {
     headers: {
       Authorization: `Bearer ${ACCESSTOKEN}`,
     },
   });
-
-  // mutate(
-  //   URL.list,
-  //   (data: any) => ({
-  //     ...data,
-  //     users: data?.users?.filter((user: any) => user.id !== id),
-  //   }),
-  //   false
-  // );
 
   return res.data;
 };

@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -73,7 +73,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
         roleId: 4,
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
       enqueueSnackbar('Update success!');
@@ -115,13 +114,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
               sm: 'repeat(1, 1fr)',
             }}
           >
-            {/* <RHFSelect name="status" label="Status">
-              {USER_STATUS_OPTIONS.map((status) => (
-                <MenuItem key={status.value} value={status.value}>
-                  {status.label}
-                </MenuItem>
-              ))}
-            </RHFSelect> */}
 
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
 
@@ -149,41 +141,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }: Props)
                 }}
               />
             )}
-            {/* <RHFTextField name="phoneNumber" label="Phone Number" /> */}
-
-            {/* <RHFAutocomplete
-              name="country"
-              label="Country"
-              options={countries.map((country) => country.label)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => {
-                const { code, label, phone } = countries.filter(
-                  (country) => country.label === option
-                )[0];
-
-                if (!label) {
-                  return null;
-                }
-
-                return (
-                  <li {...props} key={label}>
-                    <Iconify
-                      key={label}
-                      icon={`circle-flags:${code.toLowerCase()}`}
-                      width={28}
-                      sx={{ mr: 1 }}
-                    />
-                    {label} ({code}) +{phone}
-                  </li>
-                );
-              }}
-            />
-
-            <RHFTextField name="state" label="State/Region" />
-            <RHFTextField name="city" label="City" />
-            <RHFTextField name="address" label="Address" />
-            <RHFTextField name="zipCode" label="Zip/Code" />
-            <RHFTextField name="company" label="Company" /> */}
           </Box>
         </DialogContent>
 

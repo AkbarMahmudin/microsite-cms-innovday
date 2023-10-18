@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -32,7 +32,9 @@ import FormProvider, {
 import { IconButton, InputAdornment } from '@mui/material';
 import { useBoolean } from 'src/hooks/use-boolean';
 // api
-import { createUser, updateUser } from 'src/api/user';
+import { createUser, deleteUser, updateUser } from 'src/api/user';
+import { ConfirmDialog } from 'src/components/custom-dialog';
+import { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
@@ -51,6 +53,10 @@ export default function UserNewEditForm({ currentUser }: Props) {
 
   const password = useBoolean();
 
+  const confirm = useBoolean();
+
+  const popover = usePopover();
+
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -59,18 +65,7 @@ export default function UserNewEditForm({ currentUser }: Props) {
     // not required
     avatarUrl: Yup.mixed<any>().nullable(),
     status: Yup.string(),
-    // isVerified: Yup.boolean(),
   });
-  
-  // const defaultValues = currentUser && {
-  //     name: currentUser?.name || '',
-  //     role: currentUser?.role.name || '',
-  //     email: currentUser?.email || '',
-  //     status: currentUser?.status || '',
-  //     avatarUrl: currentUser?.avatarUrl || null,
-  //     // isVerified: currentUser?.isVerified || true,
-  //     password: currentUser?.password || '',
-  //   };
 
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
@@ -157,7 +152,16 @@ export default function UserNewEditForm({ currentUser }: Props) {
     [setValue]
   );
 
-  console.log('currentUser from user new edit form: ', currentUser);
+  const handleDelete = useCallback(
+    async (id: number | string) => {
+      await deleteUser(Number(id));
+
+      reset();
+      enqueueSnackbar('Delete success!');
+      router.push(paths.dashboard.user.list);
+    },
+    [enqueueSnackbar, reset, router]
+  );
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -234,7 +238,14 @@ export default function UserNewEditForm({ currentUser }: Props) {
 
             {currentUser && (
               <Stack justifyContent="center" alignItems="center" sx={{ mt: 3 }}>
-                <Button variant="soft" color="error">
+                <Button
+                  variant="soft"
+                  color="error"
+                  onClick={() => {
+                    confirm.onTrue();
+                    popover.onClose();
+                  }}
+                >
                   Delete User
                 </Button>
               </Stack>
@@ -302,6 +313,22 @@ export default function UserNewEditForm({ currentUser }: Props) {
           </Card>
         </Grid>
       </Grid>
+
+      <ConfirmDialog
+        open={confirm.value}
+        onClose={confirm.onFalse}
+        title="Delete"
+        content="Are you sure want to delete?"
+        action={
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => handleDelete(currentUser?.id || '')}
+          >
+            Delete
+          </Button>
+        }
+      />
     </FormProvider>
   );
 }
