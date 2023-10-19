@@ -17,6 +17,7 @@ import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import { Tooltip } from '@mui/material';
+import { createRole, updateRole } from 'src/api/role';
 
 // ----------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
 
   const defaultValues = useMemo(
     () => ({
-      name: currentRole?.name || '',
+      name: currentRole?.name.replace(/\b\w/g, (c) => c.toUpperCase()) || '',
     }),
     [currentRole]
   );
@@ -52,12 +53,24 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
     formState: { isSubmitting },
   } = methods;
 
+  console.log('currentRole', currentRole);
+
   const onSubmit = handleSubmit(async (data) => {
     try {
+      let message = '';
+      
+      if (currentRole) {
+        await updateRole(Number(currentRole?.id), data);
+        message = 'Update success!';
+      } else {
+        await createRole(data);
+        message = 'Create success!';
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
-      enqueueSnackbar('Update success!');
+      enqueueSnackbar(message);
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
@@ -89,7 +102,8 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
           >
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
 
-            {currentRole ? (
+            <RHFTextField name="name" label="Name" />
+            {/* {currentRole ? (
               <RHFTextField name="name" label="Name" />
             ) : (
               <>
@@ -109,7 +123,7 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
                   </Tooltip>
                 )}
               </>
-            )}
+            )} */}
           </Box>
         </DialogContent>
 

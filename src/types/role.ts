@@ -1,7 +1,7 @@
 export type IRoleTableFilterValue = string | string[];
 
 export type IRoleItem = {
-  id: string;
+  id: number | string;
   name: string;
 };
 

@@ -20,6 +20,7 @@ import { RouterLink } from 'src/routes/components';
 import { _categoryList, _roles, USER_STATUS_OPTIONS } from 'src/_mock';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useDebounce } from 'src/hooks/use-debounce';
 // components
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -39,7 +40,11 @@ import {
 } from 'src/components/table';
 // types
 import { IRoleItem, IRoleTableFilters, IRoleTableFilterValue } from 'src/types/role';
-//
+// api
+import { useGetRoles, deleteRole } from 'src/api/role';
+
+import { enqueueSnackbar } from 'notistack';
+
 import RoleTableToolbar from '../role-table-toolbar';
 import RoleTableFiltersResult from '../role-table-filters-result';
 import RoleTableRow from '../role-table-row';
@@ -69,20 +74,29 @@ export default function RoleListView() {
 
   const quickNew = useBoolean();
 
-  const [tableData, setTableData] = useState(_categoryList);
+  // const [tableData, setTableData] = useState(_categoryList);
 
   const [filters, setFilters] = useState(defaultFilters);
 
+  const filterByName = useDebounce(filters.name, 500);
+
+  const { roles, meta, rolesEmpty } = useGetRoles({
+    name: filterByName,
+    limit: Number(table.rowsPerPage),
+    page: Number(table.page + 1),
+    sort: {
+      [table.orderBy]: table.order,
+    },
+  });
+  
   const dataFiltered = applyFilter({
-    inputData: tableData,
+    inputData: roles,
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+
+  const dataInPage = dataFiltered;
 
   const denseHeight = table.dense ? 52 : 72;
 
@@ -102,25 +116,31 @@ export default function RoleListView() {
   );
 
   const handleDeleteRow = useCallback(
-    (id: string) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-      setTableData(deleteRow);
-
-      table.onUpdatePageDeleteRow(dataInPage.length);
+    async (id: string) => {
+      try {
+        await deleteRole(Number(id));
+        roles.filter((row) => row.id !== id);
+  
+        table.onUpdatePageDeleteRow(dataInPage.length);
+        enqueueSnackbar('Delete success!', { variant: 'success' });
+      } catch (error) {
+        console.error(error);
+        enqueueSnackbar('Delete failed!', { variant: 'error' });
+      }
     },
-    [dataInPage.length, table, tableData]
+    [dataInPage.length, roles, table]
   );
 
   const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
-    setTableData(deleteRows);
+    const deleteRows = roles.filter((row) => !table.selected.includes(row.id));
+    // setTableData(deleteRows);
 
     table.onUpdatePageDeleteRows({
-      totalRows: tableData.length,
+      totalRows: meta?.total_data,
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [dataFiltered.length, dataInPage.length, meta?.total_data, roles, table]);
 
   const handleEditRow = useCallback(
     (id: string) => {
@@ -187,11 +207,11 @@ export default function RoleListView() {
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
-              rowCount={tableData.length}
+              rowCount={roles.length}
               onSelectAllRows={(checked) =>
                 table.onSelectAllRows(
                   checked,
-                  tableData.map((row) => row.id)
+                  roles.map((row) => row.id)
                 )
               }
               action={
@@ -209,23 +229,19 @@ export default function RoleListView() {
                   order={table.order}
                   orderBy={table.orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={tableData.length}
+                  rowCount={roles.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      tableData.map((row) => row.id)
+                      roles.map((row) => row.id)
                     )
                   }
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {roles
                     .map((row) => (
                       <RoleTableRow
                         key={row.id}
@@ -239,7 +255,7 @@ export default function RoleListView() {
 
                   <TableEmptyRows
                     height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                    emptyRows={rolesEmpty ? emptyRows(table.page, table.rowsPerPage, roles.length) : 0}
                   />
 
                   <TableNoData notFound={notFound} />
@@ -249,7 +265,7 @@ export default function RoleListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={meta?.total_data || 5}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

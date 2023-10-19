@@ -48,7 +48,7 @@ export default function RoleTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{name}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{name}</TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
@@ -71,11 +71,7 @@ export default function RoleTableRow({
         </TableCell>
       </TableRow>
 
-      <RoleQuickNewEditForm
-        currentRole={row}
-        open={quickEdit.value}
-        onClose={quickEdit.onFalse}
-      />
+      <RoleQuickNewEditForm currentRole={row} open={quickEdit.value} onClose={quickEdit.onFalse} />
 
       <ConfirmDialog
         open={confirm.value}
