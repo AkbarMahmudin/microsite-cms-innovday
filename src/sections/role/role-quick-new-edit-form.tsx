@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -13,10 +13,8 @@ import DialogContent from '@mui/material/DialogContent';
 // types
 import { IRoleItem } from 'src/types/role';
 // components
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
-import { Tooltip } from '@mui/material';
 import { createRole, updateRole } from 'src/api/role';
 
 // ----------------------------------------------------------------------
@@ -28,7 +26,6 @@ type Props = {
 };
 
 export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Props) {
-  const [roleCountFields, setRoleCountFields] = useState(1);
   const { enqueueSnackbar } = useSnackbar();
 
   const NewCategorySchema = Yup.object().shape({
@@ -52,8 +49,6 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
-
-  console.log('currentRole', currentRole);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -90,7 +85,7 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle>{currentRole ? 'Quick Update' : 'New Role'}</DialogTitle>
 
-        <DialogContent>
+      <DialogContent>
           <Box
             rowGap={3}
             columnGap={2}
@@ -103,27 +98,6 @@ export default function RoleQuickNewEditForm({ currentRole, open, onClose }: Pro
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
 
             <RHFTextField name="name" label="Name" />
-            {/* {currentRole ? (
-              <RHFTextField name="name" label="Name" />
-            ) : (
-              <>
-                {new Array(roleCountFields).fill(0).map((_, index) => (
-                  <RHFTextField key={index} name={`name[${index}]`} label="Name" />
-                ))}
-                <Tooltip title="Add more">
-                  <Button variant="soft" onClick={() => setRoleCountFields((prev) => prev+1)}>
-                    <Iconify icon="mingcute:add-line" />
-                  </Button>
-                </Tooltip>
-                {roleCountFields > 1 && (
-                  <Tooltip title="Reset">
-                    <Button variant="soft" color="info" onClick={() => setRoleCountFields(1)}>
-                      <Iconify icon="system-uicons:reset-alt" />
-                    </Button>
-                  </Tooltip>
-                )}
-              </>
-            )} */}
           </Box>
         </DialogContent>
 

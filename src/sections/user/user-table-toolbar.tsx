@@ -22,7 +22,7 @@ type Props = {
   filters: IUserTableFilters;
   onFilters: (name: string, value: IUserTableFilterValue) => void;
   //
-  roleOptions: string[];
+  roleOptions: any[];
 };
 
 export default function UserTableToolbar({
@@ -77,7 +77,17 @@ export default function UserTableToolbar({
             value={filters.role}
             onChange={handleFilterRole}
             input={<OutlinedInput label="Role" />}
-            renderValue={(selected) => selected.map((value) => value).join(', ')}
+            renderValue={(selected) =>
+              selected
+                .map((value) =>
+                  roleOptions
+                    .filter((role) => role.id === value)
+                    .map(({ name }: { name: string }) =>
+                      name.replace(/\b\w/g, (c: string) => c.toUpperCase())
+                    )
+                )
+                .join(', ')
+            }
             MenuProps={{
               PaperProps: {
                 sx: { maxHeight: 240 },
@@ -85,9 +95,9 @@ export default function UserTableToolbar({
             }}
           >
             {roleOptions.map((option) => (
-              <MenuItem key={option} value={option}>
-                <Checkbox disableRipple size="small" checked={filters.role.includes(option)} />
-                {option}
+              <MenuItem key={option?.id} value={option?.id}>
+                <Checkbox disableRipple size="small" checked={filters.role.includes(option?.id)} />
+                {option.name.replace(/\b\w/g, (c: string) => c.toUpperCase())}
               </MenuItem>
             ))}
           </Select>

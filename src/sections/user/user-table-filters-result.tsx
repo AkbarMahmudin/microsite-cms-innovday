@@ -13,6 +13,7 @@ import Iconify from 'src/components/iconify';
 
 type Props = StackProps & {
   filters: IUserTableFilters;
+  roles: any[];
   onFilters: (name: string, value: IUserTableFilterValue) => void;
   //
   onResetFilters: VoidFunction;
@@ -22,6 +23,7 @@ type Props = StackProps & {
 
 export default function UserTableFiltersResult({
   filters,
+  roles,
   onFilters,
   //
   onResetFilters,
@@ -57,7 +59,14 @@ export default function UserTableFiltersResult({
         {!!filters.role.length && (
           <Block label="Role:">
             {filters.role.map((item) => (
-              <Chip key={item} label={item} size="small" onDelete={() => handleRemoveRole(item)} />
+              <Chip
+                key={item}
+                label={roles
+                  .find((role) => role.id === item)
+                  ?.name.replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                size="small"
+                onDelete={() => handleRemoveRole(item)}
+              />
             ))}
           </Block>
         )}

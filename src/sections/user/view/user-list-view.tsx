@@ -13,8 +13,6 @@ import TableContainer from '@mui/material/TableContainer';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
-// _mock
-import { _roles } from 'src/_mock';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
 // components
@@ -37,9 +35,11 @@ import {
 import { IUserItem, IUserTableFilters, IUserTableFilterValue } from 'src/types/user';
 // api
 import { deleteUser, useGetUsers } from 'src/api/user';
+import { useGetRoles } from 'src/api/role';
 //
 import { useDebounce } from 'src/hooks/use-debounce';
 import { enqueueSnackbar } from 'notistack';
+
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
@@ -72,13 +72,18 @@ export default function UserListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const filterDebounce = useDebounce(filters.name, 500);
+  const filterName = useDebounce(filters.name, 500);
 
-  const { users, meta } = useGetUsers({
+  // ROLE
+  const { roles } = useGetRoles({ limit: '*' });
+
+  // USER
+  const { users, meta, usersEmpty } = useGetUsers({
     sort: {
       [table.orderBy]: table.order,
     },
-    name: filterDebounce,
+    roleIds: filters.role,
+    name: filterName,
     limit: Number(table.rowsPerPage) || 5,
     page: Number(table.page) + 1,
   });
@@ -173,17 +178,18 @@ export default function UserListView() {
             filters={filters}
             onFilters={handleFilters}
             //
-            roleOptions={_roles}
+            roleOptions={roles}
           />
 
           {canReset && (
             <UserTableFiltersResult
               filters={filters}
+              roles={roles}
               onFilters={handleFilters}
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={meta?.total_data || 0}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -240,7 +246,7 @@ export default function UserListView() {
                   <TableEmptyRows
                     height={denseHeight}
                     emptyRows={
-                      !users.length ? emptyRows(table.page, table.rowsPerPage, users.length) : 0
+                      usersEmpty ? emptyRows(table.page, table.rowsPerPage, users.length) : 0
                     }
                   />
 
@@ -300,8 +306,6 @@ function applyFilter({
   comparator: (a: any, b: any) => number;
   filters: IUserTableFilters;
 }) {
-  const { name, status, role } = filters;
-
   const stabilizedThis = inputData.map((el, index) => [el, index] as const);
 
   stabilizedThis.sort((a, b) => {
@@ -311,20 +315,6 @@ function applyFilter({
   });
 
   inputData = stabilizedThis.map((el) => el[0]);
-
-  if (name) {
-    inputData = inputData.filter(
-      (user) => user.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
-    );
-  }
-
-  if (status !== 'all') {
-    inputData = inputData.filter((user) => user.status === status);
-  }
-
-  if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.role.name));
-  }
 
   return inputData;
 }

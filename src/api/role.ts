@@ -12,13 +12,16 @@ const options = {
   refreshInterval: 5000,
   revalidateOnMount: true,
   dedupingInterval: 5000,
-  refreshWhenHidden: true,
-  refreshWhenOffline: true,
+  refreshWhenHidden: false,
+  refreshWhenOffline: false,
 };
 
-export const useGetRoles = (query: any) => {
+export const useGetRoles = (query: any, revalidateOptions?: any) => {
   const URLList = query ? [URL.list, { params: query }] : URL.list;
-  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, options);
+  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, {
+    ...options,
+    ...revalidateOptions,
+  });
   const data = resData?.data;
   const meta = resData?.meta;
 

@@ -12,8 +12,8 @@ const options = {
   refreshInterval: 5000,
   revalidateOnMount: true,
   dedupingInterval: 5000,
-  refreshWhenHidden: true,
-  refreshWhenOffline: true,
+  refreshWhenHidden: false,
+  refreshWhenOffline: false,
 };
 
 export const useGetUsers = (query: any) => {

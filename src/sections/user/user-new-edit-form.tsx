@@ -35,10 +35,11 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { createUser, deleteUser, updateUser } from 'src/api/user';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { usePopover } from 'src/components/custom-popover';
+import { useGetRoles } from 'src/api/role';
 
 // ----------------------------------------------------------------------
 
-const roles = ['Admin', 'Author', 'Editor', 'User'];
+// const roles = ['Admin', 'Author', 'Editor', 'User'];
 
 // ----------------------------------------------------------------------
 
@@ -47,6 +48,15 @@ type Props = {
 };
 
 export default function UserNewEditForm({ currentUser }: Props) {
+  const { roles } = useGetRoles(
+    { limit: '*' },
+    {
+      revalidateOnFocus: true,
+      refreshInterval: false,
+      dedupingInterval: false,
+    }
+  );
+
   const router = useRouter();
 
   const { enqueueSnackbar } = useSnackbar();
@@ -82,7 +92,7 @@ export default function UserNewEditForm({ currentUser }: Props) {
   useEffect(() => {
     if (currentUser) {
       methods.setValue('name', currentUser?.name || '');
-      methods.setValue('role', currentUser?.role.name || '');
+      methods.setValue('role', currentUser?.role.id as unknown as string || '');
       methods.setValue('email', currentUser?.email || '');
       methods.setValue('status', currentUser?.status || '');
       methods.setValue('avatarUrl', currentUser?.avatarUrl || null);
@@ -111,14 +121,14 @@ export default function UserNewEditForm({ currentUser }: Props) {
           name: data.name,
           email: data.email,
           ...(data.password && { password: data.password }),
-          roleId: 4,
+          roleId: Number(data.role),
         });
       } else {
         await createUser({
           name: data.name,
           email: data.email,
           password: data.password,
-          roleId: 4,
+          roleId: Number(data.role),
         });
       }
 
@@ -286,19 +296,30 @@ export default function UserNewEditForm({ currentUser }: Props) {
               <RHFAutocomplete
                 name="role"
                 label="Role"
-                options={roles.map((role) => role)}
-                getOptionLabel={(option) => option}
+                options={roles.map((role) => role.id)}
+                getOptionLabel={(option) =>
+                  roles
+                    .filter((role) => role.id === option)
+                    .map((role) => role.name.replace(/\b\w/g, (c: string) => c.toUpperCase()))[0] ||
+                  ''
+                }
                 isOptionEqualToValue={(option, value) => option === value}
                 renderOption={(props, option) => {
-                  const roleName = roles.filter((role) => role === option)[0];
+                  const { id, name } = roles.filter((role) => role.id === option)[0];
 
-                  if (!roleName) {
+                  if (!name) {
                     return null;
                   }
 
                   return (
-                    <li {...props} key={roleName}>
-                      {roleName}
+                    <li
+                      {...props}
+                      style={{
+                        textTransform: 'capitalize',
+                      }}
+                      key={id}
+                    >
+                      {name}
                     </li>
                   );
                 }}

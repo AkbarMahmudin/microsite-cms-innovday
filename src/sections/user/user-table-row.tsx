@@ -66,7 +66,7 @@ export default function UserTableRow({
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{role.name}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{role.name}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDateTime(createdAt)}</TableCell>
 

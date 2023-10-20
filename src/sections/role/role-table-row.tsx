@@ -77,7 +77,7 @@ export default function RoleTableRow({
         open={confirm.value}
         onClose={confirm.onFalse}
         title="Delete"
-        content="Are you sure want to delete?"
+        content="Are you sure to delete this role?"
         action={
           <Button variant="contained" color="error" onClick={onDeleteRow}>
             Delete
