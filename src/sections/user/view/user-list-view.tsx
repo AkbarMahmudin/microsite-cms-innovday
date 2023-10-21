@@ -34,7 +34,7 @@ import {
 // types
 import { IUserItem, IUserTableFilters, IUserTableFilterValue } from 'src/types/user';
 // api
-import { deleteUser, useGetUsers } from 'src/api/user';
+import { deleteUser, deleteUsers, useGetUsers } from 'src/api/user';
 import { useGetRoles } from 'src/api/role';
 //
 import { useDebounce } from 'src/hooks/use-debounce';
@@ -129,8 +129,10 @@ export default function UserListView() {
     [table, meta, dataInPage, users]
   );
 
-  const handleDeleteRows = useCallback(() => {
-    users.filter((row) => !table.selected.includes(row.id));
+  const handleDeleteRows = useCallback(async () => {
+    await deleteUsers(table.selected as unknown as number[]);
+
+    enqueueSnackbar('Delete success!');
 
     table.onUpdatePageDeleteRows({
       totalRows: users.length,

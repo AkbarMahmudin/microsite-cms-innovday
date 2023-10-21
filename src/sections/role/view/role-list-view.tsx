@@ -35,7 +35,7 @@ import {
 // types
 import { IRoleItem, IRoleTableFilters, IRoleTableFilterValue } from 'src/types/role';
 // api
-import { useGetRoles, deleteRole } from 'src/api/role';
+import { useGetRoles, deleteRole, deleteRoles } from 'src/api/role';
 
 import { enqueueSnackbar } from 'notistack';
 
@@ -125,16 +125,17 @@ export default function RoleListView() {
     [dataInPage.length, roles, table]
   );
 
-  const handleDeleteRows = useCallback(() => {
-    roles.filter((row) => !table.selected.includes(row.id));
-    // setTableData(deleteRows);
+  const handleDeleteRows = useCallback(async () => {
+    await deleteRoles(table.selected as unknown as number[]);
+
+    enqueueSnackbar('Delete success!');
 
     table.onUpdatePageDeleteRows({
       totalRows: meta?.total_data,
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, meta?.total_data, roles, table]);
+  }, [dataFiltered.length, dataInPage.length, meta?.total_data, table]);
 
   const handleEditRow = useCallback(
     (id: string) => {

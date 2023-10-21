@@ -105,6 +105,24 @@ export const deleteUser = async (id: number) => {
   return res.data;
 };
 
+export const deleteUsers = async (ids: number[]) => {
+  const { delete: URLDelete } = URL;
+
+  mutate(URL.list, (data: any) => ({
+    ...data,
+    users: data?.users?.filter((user: any) => !ids.includes(user.id)),
+  }));
+
+  const { data: res } = await axios.delete(URLDelete, {
+    data: { ids },
+    headers: {
+      Authorization: `Bearer ${ACCESSTOKEN}`,
+    },
+  });
+
+  return res.data;
+};
+
 // ----------------------------------------------------------------------
 // USER ME (USER PROFILE ACCOUNT)
 // ----------------------------------------------------------------------

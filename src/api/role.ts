@@ -72,3 +72,15 @@ export const deleteRole = async (id: number) => {
 
   return res.data;
 };
+
+export const deleteRoles = async (ids: number[]) => {
+  const { data: res } = await axios.delete(URL.delete, {
+    data: { ids },
+    headers: {
+      Authorization: `Bearer ${ACCESSTOKEN}`,
+    },
+  });
+  mutate(URL.list);
+
+  return res.data;
+}
