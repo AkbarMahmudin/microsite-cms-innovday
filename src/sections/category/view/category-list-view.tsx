@@ -1,9 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { useState, useCallback } from 'react';
 // @mui
-import { alpha } from '@mui/material/styles';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -16,12 +13,10 @@ import TableContainer from '@mui/material/TableContainer';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
-// _mock
-import { _categoryList, _roles, USER_STATUS_OPTIONS } from 'src/_mock';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useDebounce } from 'src/hooks/use-debounce';
 // components
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -37,18 +32,23 @@ import {
   TableSelectedAction,
   TablePaginationCustom,
 } from 'src/components/table';
-// types
-import { IUserItem, IUserTableFilters, IUserTableFilterValue } from 'src/types/user';
 //
-import { ICategoryItem, ICategoryTableFilters, ICategoryTableFilterValue } from 'src/types/category';
+import {
+  ICategoryItem,
+  ICategoryTableFilters,
+  ICategoryTableFilterValue,
+} from 'src/types/category';
+// api
+import { deleteCategories, deleteCategory, useGetCategories } from 'src/api/category';
+
+import { enqueueSnackbar } from 'notistack';
+
 import CategoryTableToolbar from '../category-table-toolbar';
 import CategoryTableFiltersResult from '../category-table-filters-result';
 import CategoryTableRow from '../category-table-row';
 import CategoryQuickNewEditForm from '../category-quick-new-edit-form';
 
 // ----------------------------------------------------------------------
-
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
@@ -74,20 +74,26 @@ export default function CategoryListView() {
 
   const quickNew = useBoolean();
 
-  const [tableData, setTableData] = useState(_categoryList);
-
   const [filters, setFilters] = useState(defaultFilters);
 
+  const filteredByName = useDebounce(filters.name, 1000);
+
+  const { categories, meta, categoriesEmpty } = useGetCategories({
+    name: filteredByName,
+    limit: table.rowsPerPage,
+    page: table.page + 1,
+    sort: {
+      [table.orderBy]: table.order,
+    },
+  });
+
   const dataFiltered = applyFilter({
-    inputData: tableData,
+    inputData: categories,
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  const dataInPage = categories;
 
   const denseHeight = table.dense ? 52 : 72;
 
@@ -107,38 +113,33 @@ export default function CategoryListView() {
   );
 
   const handleDeleteRow = useCallback(
-    (id: string) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-      setTableData(deleteRow);
+    async (id: string) => {
+      await deleteCategory(Number(id));
+      categories.filter((row) => row.id !== id);
 
+      enqueueSnackbar('Delete success!');
       table.onUpdatePageDeleteRow(dataInPage.length);
     },
-    [dataInPage.length, table, tableData]
+    [dataInPage.length, table, categories]
   );
 
-  const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
-    setTableData(deleteRows);
+  const handleDeleteRows = useCallback(async () => {
+    await deleteCategories(table.selected as unknown as number[]);
+
+    enqueueSnackbar('Delete success!');
 
     table.onUpdatePageDeleteRows({
-      totalRows: tableData.length,
+      totalRows: meta?.total_data || 5,
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [dataFiltered.length, dataInPage.length, table, meta]);
 
   const handleEditRow = useCallback(
     (id: string) => {
       router.push(paths.dashboard.user.edit(id));
     },
     [router]
-  );
-
-  const handleFilterStatus = useCallback(
-    (event: React.SyntheticEvent, newValue: string) => {
-      handleFilters('status', newValue);
-    },
-    [handleFilters]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -174,10 +175,7 @@ export default function CategoryListView() {
         <CategoryQuickNewEditForm open={quickNew.value} onClose={quickNew.onFalse} />
 
         <Card>
-          <CategoryTableToolbar
-            filters={filters}
-            onFilters={handleFilters}
-          />
+          <CategoryTableToolbar filters={filters} onFilters={handleFilters} />
 
           {canReset && (
             <CategoryTableFiltersResult
@@ -186,7 +184,7 @@ export default function CategoryListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={meta?.total_data || 5}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -195,11 +193,11 @@ export default function CategoryListView() {
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
-              rowCount={tableData.length}
+              rowCount={categories.length}
               onSelectAllRows={(checked) =>
                 table.onSelectAllRows(
                   checked,
-                  tableData.map((row) => row.id)
+                  categories.map((row) => row.id)
                 )
               }
               action={
@@ -217,37 +215,36 @@ export default function CategoryListView() {
                   order={table.order}
                   orderBy={table.orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={tableData.length}
+                  rowCount={categories.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      tableData.map((row) => row.id)
+                      categories.map((row) => row.id)
                     )
                   }
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <CategoryTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                      />
-                    ))}
+                  {categories.map((row) => (
+                    <CategoryTableRow
+                      key={row.id}
+                      row={row}
+                      selected={table.selected.includes(row.id)}
+                      onSelectRow={() => table.onSelectRow(row.id)}
+                      onDeleteRow={() => handleDeleteRow(row.id)}
+                      onEditRow={() => handleEditRow(row.id)}
+                    />
+                  ))}
 
                   <TableEmptyRows
                     height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                    emptyRows={
+                      categoriesEmpty
+                        ? emptyRows(table.page, table.rowsPerPage, categories.length)
+                        : 0
+                    }
                   />
 
                   <TableNoData notFound={notFound} />
@@ -257,7 +254,7 @@ export default function CategoryListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={meta?.total_data || 5}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -306,7 +303,7 @@ function applyFilter({
   comparator: (a: any, b: any) => number;
   filters: ICategoryTableFilters;
 }) {
-  const { name, slug } = filters;
+  const { name } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index] as const);
 

@@ -1,20 +1,17 @@
 // @mui
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
-import ListItemText from '@mui/material/ListItemText';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
 // types
 import { ICategoryItem } from 'src/types/category';
 // components
 import Iconify from 'src/components/iconify';
-import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 //
 import CategoryQuickNewEditForm from './category-quick-new-edit-form';
@@ -51,7 +48,7 @@ export default function CategoryTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{name}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{name}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{slug}</TableCell>
 

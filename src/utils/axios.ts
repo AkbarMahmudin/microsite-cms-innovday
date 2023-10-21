@@ -57,6 +57,13 @@ export const endpoints = {
     update: '/roles',
     delete: '/roles',
   },
+  category: {
+    list: '/categories',
+    create: '/categories',
+    details: '/categories',
+    update: '/categories',
+    delete: '/categories',
+  },
   // ------------------------------
   mail: {
     list: '/api/mail/list',

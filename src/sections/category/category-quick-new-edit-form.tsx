@@ -1,33 +1,20 @@
 import * as Yup from 'yup';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import LoadingButton from '@mui/lab/LoadingButton';
 import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-// _mock
-import { USER_STATUS_OPTIONS } from 'src/_mock';
-// types
-import { IUserItem } from 'src/types/user';
-// assets
-import { countries } from 'src/assets/data';
 // components
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import { ICategoryItem } from 'src/types/category';
-import { Tooltip } from '@mui/material';
-
-// ----------------------------------------------------------------------
-
-const roles = ['Admin', 'Author', 'Editor', 'User'];
+import { createCategory, updateCategory } from 'src/api/category';
 
 // ----------------------------------------------------------------------
 
@@ -38,7 +25,7 @@ type Props = {
 };
 
 export default function UserQuickNewEditForm({ currentCategory, open, onClose }: Props) {
-  const [categoryCountFields, setCategoryCountFields] = useState(1);
+  // const [categoryCountFields, setCategoryCountFields] = useState(1);
   const { enqueueSnackbar } = useSnackbar();
 
   const NewCategorySchema = Yup.object().shape({
@@ -65,13 +52,21 @@ export default function UserQuickNewEditForm({ currentCategory, open, onClose }:
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      let message = 'Create success!';
+      if (currentCategory) {
+        message = 'Update success!';
+        await updateCategory(Number(currentCategory?.id), data);
+      } else {
+        await createCategory(data);
+      }
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
-      enqueueSnackbar('Update success!');
+      enqueueSnackbar(message);
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(error.message, { variant: 'error' });
     }
   });
 
@@ -100,27 +95,7 @@ export default function UserQuickNewEditForm({ currentCategory, open, onClose }:
           >
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
 
-            {currentCategory ? (
-              <RHFTextField name="name" label="Name" />
-            ) : (
-              <>
-                {new Array(categoryCountFields).fill(0).map((_, index) => (
-                  <RHFTextField key={index} name={`name[${index}]`} label="Name" />
-                ))}
-                <Tooltip title="Add more">
-                  <Button variant="soft" onClick={() => setCategoryCountFields((prev) => prev+1)}>
-                    <Iconify icon="mingcute:add-line" />
-                  </Button>
-                </Tooltip>
-                {categoryCountFields > 1 && (
-                  <Tooltip title="Reset">
-                    <Button variant="soft" color="info" onClick={() => setCategoryCountFields(1)}>
-                      <Iconify icon="system-uicons:reset-alt" />
-                    </Button>
-                  </Tooltip>
-                )}
-              </>
-            )}
+            <RHFTextField name="name" label="Name" />
           </Box>
         </DialogContent>
 
