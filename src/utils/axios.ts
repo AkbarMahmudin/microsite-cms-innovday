@@ -64,6 +64,13 @@ export const endpoints = {
     update: '/categories',
     delete: '/categories',
   },
+  stream: {
+    list: '/streams',
+    create: '/streams',
+    details: '/streams',
+    update: '/streams',
+    delete: '/streams',
+  },
   // ------------------------------
   mail: {
     list: '/api/mail/list',

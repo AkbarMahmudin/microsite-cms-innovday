@@ -12,23 +12,24 @@ import Iconify from 'src/components/iconify';
 import { useRouter } from 'src/routes/hooks';
 import SearchNotFound from 'src/components/search-not-found';
 // types
-import { IPostItem } from 'src/types/blog';
+import { IStreamItem } from 'src/types/stream';
 
 // ----------------------------------------------------------------------
 
 type Props = {
   query: string;
-  results: IPostItem[];
+  // results: IPostItem[];
+  results: IStreamItem[];
   onSearch: (inputValue: string) => void;
-  hrefItem: (title: string) => string;
+  hrefItem: (slug: string) => string;
   loading?: boolean;
 };
 
 export default function StreamSearch({ query, results, onSearch, hrefItem, loading }: Props) {
   const router = useRouter();
 
-  const handleClick = (title: string) => {
-    router.push(hrefItem(title));
+  const handleClick = (slug: string) => {
+    router.push(hrefItem(slug));
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -86,16 +87,16 @@ export default function StreamSearch({ query, results, onSearch, hrefItem, loadi
           }}
         />
       )}
-      renderOption={(props, post, { inputValue }) => {
-        const matches = match(post.title, inputValue);
-        const parts = parse(post.title, matches);
+      renderOption={(props, stream, { inputValue }) => {
+        const matches = match(stream.title, inputValue);
+        const parts = parse(stream.title, matches);
 
         return (
-          <li {...props} key={post.id}>
+          <li {...props} key={stream.id}>
             <Avatar
-              key={post.id}
-              alt={post.title}
-              src={post.coverUrl}
+              key={stream.id}
+              alt={stream.title}
+              src={stream.thumbnail}
               variant="rounded"
               sx={{
                 width: 48,
@@ -106,7 +107,7 @@ export default function StreamSearch({ query, results, onSearch, hrefItem, loadi
               }}
             />
 
-            <Link key={inputValue} underline="none" onClick={() => handleClick(post.title)}>
+            <Link key={inputValue} underline="none" onClick={() => handleClick(stream.id)}>
               {parts.map((part, index) => (
                 <Typography
                   key={index}

@@ -13,7 +13,8 @@ import { StreamItemSkeleton } from './stream-skeleton';
 // ----------------------------------------------------------------------
 
 type Props = {
-  posts: IPostItem[];
+  // posts: IPostItem[];
+  posts: any;
   loading?: boolean;
   disabledIndex?: boolean;
 };
@@ -31,7 +32,7 @@ export default function StreamList({ posts, loading, disabledIndex }: Props) {
 
   const renderList = (
     <>
-      {posts.map((post, index) => (
+      {posts.map((post: any, index: number) => (
         <Grid key={post.id} xs={12} sm={6} md={!disabledIndex && index === 0 ? 6 : 3}>
           <StreamItem post={post} index={!disabledIndex ? index : undefined} />
         </Grid>

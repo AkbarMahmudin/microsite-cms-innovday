@@ -11,13 +11,14 @@ import { RouterLink } from 'src/routes/components';
 // _mock
 import { POST_PUBLISH_OPTIONS } from 'src/_mock';
 // api
-import { useGetPost } from 'src/api/blog';
+import { useGetStream } from 'src/api/stream';
 // components
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 import EmptyContent from 'src/components/empty-content';
 //
 import { Box, Grid, ListItemText } from '@mui/material';
+import { fDate } from 'src/utils/format-time';
 import { StreamDetailsSkeleton } from '../stream-skeleton';
 import StreamDetailsToolbar from '../stream-details-toolbar';
 import StreamEmbed from '../stream-embed';
@@ -25,30 +26,30 @@ import StreamEmbed from '../stream-embed';
 // ----------------------------------------------------------------------
 
 type Props = {
-  title: string;
+  id: number;
 };
 
-export default function StreamDetailsView({ title }: Props) {
+export default function StreamDetailsView({ id }: Props) {
   const [publish, setPublish] = useState('');
 
-  const { post, postLoading, postError } = useGetPost(title);
+  const { stream, streamLoading, streamError } = useGetStream(id);
 
   const handleChangePublish = useCallback((newValue: string) => {
     setPublish(newValue);
   }, []);
 
   useEffect(() => {
-    if (post) {
-      setPublish(post?.publish);
+    if (stream) {
+      setPublish(stream?.status);
     }
-  }, [post]);
+  }, [stream]);
 
   const renderSkeleton = <StreamDetailsSkeleton />;
 
   const renderError = (
     <EmptyContent
       filled
-      title={`${postError?.message}`}
+      title={`${streamError?.message}`}
       action={
         <Button
           component={RouterLink}
@@ -65,12 +66,12 @@ export default function StreamDetailsView({ title }: Props) {
     />
   );
 
-  const renderStream = post && (
+  const renderStream = stream && (
     <>
       <StreamDetailsToolbar
         backLink={paths.dashboard.stream.root}
-        editLink={paths.dashboard.stream.edit(`${post?.title}`)}
-        liveLink={paths.post.details(`${post?.title}`)}
+        editLink={paths.dashboard.stream.edit(`${stream?.title}`)}
+        liveLink={paths.post.details(`${stream?.title}`)}
         publish={publish || ''}
         onChangePublish={handleChangePublish}
         publishOptions={POST_PUBLISH_OPTIONS}
@@ -78,7 +79,7 @@ export default function StreamDetailsView({ title }: Props) {
 
       {/* <StreamDetailsHero title={post.title} coverUrl={post.coverUrl} /> */}
 
-      <StreamEmbed youtubeId="mccYpk0cEqw" slidoId="tME59qcyfHWjrBP9NgNfj4" />
+      <StreamEmbed youtubeId={stream.youtubeId} slidoId={stream.slidoId} />
       {/* <StreamEmbed youtubeId="mccYpk0cEqw" /> */}
 
       <Grid container>
@@ -90,10 +91,11 @@ export default function StreamDetailsView({ title }: Props) {
               mb: 5,
             }}
           >
-            {title}
+            {stream.title}
           </Typography>
-          <Markdown children={post.content} />
+          <Markdown children={stream.content} />
         </Grid>
+        
         <Grid
           xs={12}
           md={4}
@@ -119,17 +121,17 @@ export default function StreamDetailsView({ title }: Props) {
             {[
               {
                 label: 'Start Date',
-                value: 'Wed, 20 Oct 2021',
+                value: `${fDate(stream.startDate)}`,
                 icon: <Iconify icon="solar:calendar-date-bold" />,
               },
               {
                 label: 'End Date',
-                value: 'Wed, 20 Oct 2021',
+                value: `${fDate(stream.endDate)}`,
                 icon: <Iconify icon="solar:calendar-date-bold" />,
               },
               {
                 label: 'Time',
-                value: '10:00 AM - 11:00 AM',
+                value: `${new Date(stream.startDate).toLocaleTimeString()} - ${new Date(stream.endDate).toLocaleTimeString()}`,
                 icon: <Iconify icon="solar:clock-circle-bold" />,
               },
               {
@@ -139,12 +141,12 @@ export default function StreamDetailsView({ title }: Props) {
               },
               {
                 label: 'Speaker',
-                value: 'Mr. John Doe',
+                value: `${stream.users[0].name}`,
                 icon: <Iconify icon="solar:user-rounded-bold" />,
               },
               {
                 label: 'Host',
-                value: 'Mrs. Mary Doe',
+                value: `${stream.users[1].name}`,
                 icon: <Iconify icon="solar:user-rounded-bold" />,
               },
             ].map((item) => (
@@ -179,7 +181,7 @@ export default function StreamDetailsView({ title }: Props) {
               borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
             }}
           >
-            {post.tags.map((tag) => (
+            {stream.tags.map((tag: any) => (
               <Chip key={tag} label={`#${tag}`} variant="soft" />
             ))}
           </Box>
@@ -190,11 +192,11 @@ export default function StreamDetailsView({ title }: Props) {
 
   return (
     <Container maxWidth={false}>
-      {postLoading && renderSkeleton}
+      {streamLoading && renderSkeleton}
 
-      {postError && renderError}
+      {streamError && renderError}
 
-      {post && renderStream}
+      {stream && renderStream}
     </Container>
   );
 }

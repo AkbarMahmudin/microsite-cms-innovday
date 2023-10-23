@@ -9,7 +9,7 @@ import { StreamDetailsView } from 'src/sections/stream/view';
 export default function StreamDetailsPage() {
   const params = useParams();
 
-  const { title } = params;
+  const { id } = params;
 
   return (
     <>
@@ -17,7 +17,7 @@ export default function StreamDetailsPage() {
         <title> Dashboard: Stream Details</title>
       </Helmet>
 
-      <StreamDetailsView title={`${title}`} />
+      <StreamDetailsView id={Number(id)} />
     </>
   );
 }

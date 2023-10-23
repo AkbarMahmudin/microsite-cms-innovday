@@ -1,9 +1,10 @@
 // ----------------------------------------------------------------------
 
-export type IStreamFilterValue = string;
+export type IStreamFilterValue = string | number;
 
 export type IStreamFilters = {
   publish: string;
+  page: number;
 };
 
 // ----------------------------------------------------------------------
@@ -41,31 +42,39 @@ export type IStreamComment = {
 export type IStreamItem = {
   id: string;
   title: string;
+  slug: string;
   tags: string[];
-  category: string;
-  publish: string;
+  category: {
+    name: string;
+  };
+  status: string;
   content: string;
-  coverUrl: string;
+  thumbnail: string;
   metaTitle: string;
-  totalViews: number;
-  totalShares: number;
+  totalViews?: number;
+  totalShares?: number;
   description: string;
-  totalComments: number;
-  totalFavorites: number;
+  key?: string;
+  totalComments?: number;
+  totalFavorites?: number;
   metaKeywords: string[];
   metaDescription: string;
-  comments: IStreamComment[];
   createdAt: Date;
-  favoritePerson: {
-    name: string;
-    avatarUrl: string;
-  }[];
+  publishedAt: Date;
   author: {
     name: string;
-    avatarUrl: string;
+    avatarUrl?: string;
   };
   youtubeID: string;
   slidoID: string;
   startDate: Date;
   endDate: Date;
+};
+
+export const StreamStatusColor: any = {
+  PUBLISHED: 'success',
+  DRAFT: 'default',
+  ARCHIVED: 'default',
+  PRIVATE: 'warning',
+  SCHEDULED: 'info',
 };

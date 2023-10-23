@@ -2,7 +2,7 @@
 import Box from '@mui/material/Box';
 import Pagination, { paginationClasses } from '@mui/material/Pagination';
 // types
-import { IPostItem } from 'src/types/blog';
+import { IStreamItem } from 'src/types/stream';
 //
 import { StreamItemSkeleton } from './stream-skeleton';
 import StreamItemHorizontal from './stream-item-horizontal';
@@ -10,14 +10,16 @@ import StreamItemHorizontal from './stream-item-horizontal';
 // ----------------------------------------------------------------------
 
 type Props = {
-  posts: IPostItem[];
+  streams: IStreamItem[];
+  meta: any;
+  onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void;
   loading?: boolean;
 };
 
-export default function StreamListHorizontal({ posts, loading }: Props) {
+export default function StreamListHorizontal({ streams, meta, onPageChange, loading }: Props) {
   const renderSkeleton = (
     <>
-      {[...Array(16)].map((_, index) => (
+      {[...Array(9)].map((_, index) => (
         <StreamItemSkeleton key={index} variant="horizontal" />
       ))}
     </>
@@ -25,8 +27,8 @@ export default function StreamListHorizontal({ posts, loading }: Props) {
 
   const renderList = (
     <>
-      {posts.map((post) => (
-        <StreamItemHorizontal key={post.id} post={post} />
+      {streams.map((stream) => (
+        <StreamItemHorizontal key={stream.id} stream={stream} />
       ))}
     </>
   );
@@ -38,21 +40,22 @@ export default function StreamListHorizontal({ posts, loading }: Props) {
         display="grid"
         gridTemplateColumns={{
           xs: 'repeat(1, 1fr)',
-          md: 'repeat(2, 1fr)',
+          md: 'repeat(3, 1fr)',
         }}
       >
         {loading ? renderSkeleton : renderList}
       </Box>
 
-      {posts.length > 8 && (
+      {streams.length && meta?.total_page > 1 &&  (
         <Pagination
-          count={8}
+          count={meta?.total_page}
           sx={{
             mt: 8,
             [`& .${paginationClasses.ul}`]: {
               justifyContent: 'center',
             },
           }}
+          onChange={onPageChange}
         />
       )}
     </>

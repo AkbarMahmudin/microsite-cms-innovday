@@ -1,9 +1,10 @@
 // ----------------------------------------------------------------------
 
-export type IPostFilterValue = string;
+export type IPostFilterValue = string | number;
 
 export type IPostFilters = {
   publish: string;
+  page: number;
 };
 
 // ----------------------------------------------------------------------

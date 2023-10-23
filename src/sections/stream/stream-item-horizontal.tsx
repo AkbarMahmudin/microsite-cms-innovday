@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 // routes
@@ -14,9 +13,9 @@ import { RouterLink } from 'src/routes/components';
 import { useResponsive } from 'src/hooks/use-responsive';
 // utils
 import { fDate } from 'src/utils/format-time';
-import { fShortenNumber } from 'src/utils/format-number';
+import { fLive } from 'src/utils/is-live';
 // types
-import { IPostItem } from 'src/types/blog';
+import { IStreamItem, StreamStatusColor } from 'src/types/stream';
 // components
 import Label from 'src/components/label';
 import Image from 'src/components/image';
@@ -43,10 +42,11 @@ import { useSnackbar } from 'notistack';
 // ----------------------------------------------------------------------
 
 type Props = {
-  post: IPostItem;
+  // post: IPostItem;
+  stream: IStreamItem;
 };
 
-export default function StreamItemHorizontal({ post }: Props) {
+export default function StreamItemHorizontal({ stream }: Props) {
   const popover = usePopover();
 
   const router = useRouter();
@@ -82,20 +82,42 @@ export default function StreamItemHorizontal({ post }: Props) {
   }, []);
 
   const {
+    id,
     title,
-    author,
-    publish,
-    coverUrl,
+    status,
+    key,
+    category,
+    thumbnail,
     createdAt,
-    totalViews,
-    totalShares,
-    totalComments,
     description,
-  } = post;
+    startDate,
+    endDate,
+  } = stream;
+
+  const statusStreaming = fLive(startDate.toString(), endDate.toString());
+
+  const renderStatusStreaming = statusStreaming && (
+    <Label variant="filled" color={statusStreaming === 'Live' ? 'error' : 'warning'}>
+      {statusStreaming}
+    </Label>
+  );
 
   return (
     <>
-      <Stack component={Card} direction="row">
+      <Stack component={Card} direction="column">
+        {mdUp && (
+          <Box
+            sx={{
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <Stack sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}>
+              {renderStatusStreaming}
+            </Stack>
+            <Image alt={title} src={thumbnail} sx={{ height: 1 }} />
+          </Box>
+        )}
         <Stack
           sx={{
             p: (theme) => theme.spacing(3, 3, 2, 3),
@@ -103,11 +125,12 @@ export default function StreamItemHorizontal({ post }: Props) {
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
-              <Label variant="outlined" color="warning">
-                Coming Soon
+              {!mdUp && renderStatusStreaming}
+              <Label variant="outlined" color={StreamStatusColor[status.toUpperCase()]}>
+                {status}
               </Label>
-              <Label variant="soft" color={(publish === 'published' && 'info') || 'default'}>
-                {publish}
+              <Label variant="soft" color="default">
+                {category.name}
               </Label>
             </Stack>
 
@@ -120,7 +143,7 @@ export default function StreamItemHorizontal({ post }: Props) {
             <Link
               color="inherit"
               component={RouterLink}
-              href={paths.dashboard.stream.details(title)}
+              href={paths.dashboard.stream.details(Number(id))}
             >
               <TextMaxLine variant="subtitle2" line={2}>
                 {title}
@@ -132,12 +155,12 @@ export default function StreamItemHorizontal({ post }: Props) {
             </TextMaxLine>
           </Stack>
 
-          <Stack direction="row" alignItems="center">
+          <Stack direction="row" alignItems="center" sx={{ pt: 3 }}>
             <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
               <Iconify icon="eva:more-horizontal-fill" />
             </IconButton>
 
-            {/* <Stack
+            <Stack
               spacing={1.5}
               flexGrow={1}
               direction="row"
@@ -149,40 +172,21 @@ export default function StreamItemHorizontal({ post }: Props) {
             >
               <Stack direction="row" alignItems="center">
                 <Iconify icon="eva:message-circle-fill" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalComments)}
+                {/* {fShortenNumber(totalComments)} */}
               </Stack>
 
               <Stack direction="row" alignItems="center">
                 <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalViews)}
+                {/* {fShortenNumber(totalViews)} */}
               </Stack>
 
               <Stack direction="row" alignItems="center">
                 <Iconify icon="solar:share-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalShares)}
+                {/* {fShortenNumber(totalShares)} */}
               </Stack>
-            </Stack> */}
+            </Stack>
           </Stack>
         </Stack>
-
-        {mdUp && (
-          <Box
-            sx={{
-              width: 180,
-              height: 240,
-              position: 'relative',
-              flexShrink: 0,
-              p: 1,
-            }}
-          >
-            {/* <Avatar
-              alt={author.name}
-              src={author.avatarUrl}
-              sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}
-            /> */}
-            <Image alt={title} src={coverUrl} sx={{ height: 1, borderRadius: 1.5 }} />
-          </Box>
-        )}
       </Stack>
 
       <CustomPopover
@@ -194,7 +198,7 @@ export default function StreamItemHorizontal({ post }: Props) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.stream.details(title));
+            router.push(paths.dashboard.stream.details(Number(id)));
           }}
         >
           <Iconify icon="solar:eye-bold" />
@@ -271,7 +275,7 @@ export default function StreamItemHorizontal({ post }: Props) {
             />
             <TextField
               fullWidth
-              value={title}
+              value={id}
               onChange={handleChange}
               onDoubleClick={handleClick}
               label="Link by ID"
@@ -287,24 +291,26 @@ export default function StreamItemHorizontal({ post }: Props) {
                 ),
               }}
             />
-            <TextField
-              fullWidth
-              value="owqieo"
-              onChange={handleChange}
-              onDoubleClick={handleClick}
-              label="Key"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Tooltip title="Copy">
-                      <IconButton onClick={() => onCopy(value)}>
-                        <Iconify icon="eva:copy-fill" width={24} />
-                      </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {key && (
+              <TextField
+                fullWidth
+                value={key}
+                onChange={handleChange}
+                onDoubleClick={handleClick}
+                label="Key"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Tooltip title="Copy">
+                        <IconButton onClick={() => onCopy(value)}>
+                          <Iconify icon="eva:copy-fill" width={24} />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
           </Stack>
         </DialogContent>
       </Dialog>

@@ -27,7 +27,8 @@ import { IPostItem } from 'src/types/blog';
 // ----------------------------------------------------------------------
 
 type Props = {
-  post: IPostItem;
+  // post: IPostItem;
+  post: any;
   index?: number;
 };
 
@@ -36,7 +37,7 @@ export default function StreamItem({ post, index }: Props) {
 
   const mdUp = useResponsive('up', 'md');
 
-  const { coverUrl, title, totalViews, totalComments, totalShares, author, createdAt } = post;
+  const { thumbnail, title, totalViews, totalComments, totalShares, author, publishedAt } = post;
 
   const latestPost = index === 0 || index === 1 || index === 2;
 
@@ -56,7 +57,7 @@ export default function StreamItem({ post, index }: Props) {
 
         <StreamContent
           title={title}
-          createdAt={createdAt}
+          createdAt={publishedAt}
           totalViews={totalViews}
           totalShares={totalShares}
           totalComments={totalComments}
@@ -65,7 +66,7 @@ export default function StreamItem({ post, index }: Props) {
 
         <Image
           alt={title}
-          src={coverUrl}
+          src={thumbnail}
           overlay={alpha(theme.palette.grey[900], 0.48)}
           sx={{
             width: 1,
@@ -101,7 +102,7 @@ export default function StreamItem({ post, index }: Props) {
           }}
         />
 
-        <Image alt={title} src={coverUrl} ratio="4/3" />
+        <Image alt={title} src={thumbnail} ratio="4/3" />
       </Box>
 
       <StreamContent
@@ -109,7 +110,7 @@ export default function StreamItem({ post, index }: Props) {
         totalViews={totalViews}
         totalComments={totalComments}
         totalShares={totalShares}
-        createdAt={createdAt}
+        createdAt={publishedAt}
       />
     </Card>
   );
