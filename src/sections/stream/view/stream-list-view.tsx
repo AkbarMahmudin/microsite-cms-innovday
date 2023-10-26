@@ -20,8 +20,9 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 // types
 import { IStreamFilters, IStreamFilterValue, StreamStatusColor } from 'src/types/stream';
 // api
-import { useGetStreams } from 'src/api/stream';
+import { deleteStream, useGetStreams } from 'src/api/stream';
 
+import { enqueueSnackbar } from 'notistack';
 import StreamSort from '../stream-sort';
 import StreamSearch from '../stream-search';
 import StreamListHorizontal from '../stream-list-horizontal';
@@ -44,6 +45,16 @@ export default function StreamListView() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [configs, setConfigs] = useState({
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    shouldRetryOnError: true,
+    keepPreviousData: true,
+    // refreshInterval: 5000,
+    // revalidateOnMount: true,
+    // dedupingInterval: 5000,
+  });
+
   const debouncedQuery = useDebounce(searchQuery);
 
   const { streams: searchResults, streamsLoading: searchLoading } = useGetStreams({
@@ -56,8 +67,8 @@ export default function StreamListView() {
     status: filters.publish !== 'all' ? filters.publish : '',
     sort: {
       createdAt: sortBy === 'latest' ? 'desc' : 'asc',
-    }
-  });
+    },
+  }, configs);
 
   const handleSortBy = useCallback((newValue: string) => {
     setSortBy(newValue);
@@ -87,6 +98,36 @@ export default function StreamListView() {
     },
     [handleFilters]
   );
+
+  const handleDeleteStream = useCallback(async (id: number) => {
+    try {
+      await deleteStream(id);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      enqueueSnackbar('Delete success!');
+
+      setConfigs((prevState: any) => ({
+        ...prevState,
+        revalidateOnFocus: false,
+        refreshInterval: 1000,
+        dedupingInterval: 1000,
+      }));
+
+      setTimeout(() => {
+        setConfigs((prevState: any) => ({
+          ...prevState,
+          revalidateOnFocus: true,
+          refreshInterval: false,
+          dedupingInterval: false,
+        }));
+      }, 5000);
+    } catch (error) {
+      if (typeof error.message === 'string') {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      } else {
+        error.message.map((err: string) => enqueueSnackbar(err, { variant: 'error' }));
+      }
+    }
+  }, []);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -174,7 +215,13 @@ export default function StreamListView() {
         </Tabs>
       )}
 
-      <StreamListHorizontal streams={streams} meta={meta} onPageChange={handlePageChange} loading={streamsLoading} />
+      <StreamListHorizontal
+        streams={streams}
+        meta={meta}
+        onPageChange={handlePageChange}
+        onDeleteStream={handleDeleteStream}
+        loading={streamsLoading}
+      />
     </Container>
   );
 }

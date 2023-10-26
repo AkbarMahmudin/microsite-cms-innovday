@@ -13,10 +13,11 @@ type Props = {
   streams: IStreamItem[];
   meta: any;
   onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void;
+  onDeleteStream: (id: number) => void;
   loading?: boolean;
 };
 
-export default function StreamListHorizontal({ streams, meta, onPageChange, loading }: Props) {
+export default function StreamListHorizontal({ streams, meta, onPageChange, onDeleteStream, loading }: Props) {
   const renderSkeleton = (
     <>
       {[...Array(9)].map((_, index) => (
@@ -28,7 +29,7 @@ export default function StreamListHorizontal({ streams, meta, onPageChange, load
   const renderList = (
     <>
       {streams.map((stream) => (
-        <StreamItemHorizontal key={stream.id} stream={stream} />
+        <StreamItemHorizontal key={stream.id} stream={stream} onDeleteStream={onDeleteStream} />
       ))}
     </>
   );

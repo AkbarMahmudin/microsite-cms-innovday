@@ -16,9 +16,12 @@ const options = {
   refreshWhenOffline: false,
 };
 
-export const useGetCategories = (query: any) => {
+export const useGetCategories = (query: any, otherOptions?: any) => {
   const URLList = query ? [URL.list, { params: query }] : URL.list;
-  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, options);
+  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, {
+    ...options,
+    ...otherOptions,
+  });
   const data = resData?.data;
   const meta = resData?.meta;
 

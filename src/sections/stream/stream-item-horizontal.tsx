@@ -38,15 +38,17 @@ import { useCopyToClipboard } from 'src/hooks/use-copy-to-clipboard';
 import { useCallback, useState } from 'react';
 import { useDoubleClick } from 'src/hooks/use-double-click';
 import { useSnackbar } from 'notistack';
+import { CLIENT_HOST } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
 type Props = {
   // post: IPostItem;
   stream: IStreamItem;
+  onDeleteStream: (id: number) => void;
 };
 
-export default function StreamItemHorizontal({ stream }: Props) {
+export default function StreamItemHorizontal({ stream, onDeleteStream }: Props) {
   const popover = usePopover();
 
   const router = useRouter();
@@ -57,7 +59,7 @@ export default function StreamItemHorizontal({ stream }: Props) {
 
   const showShareModal = useBoolean();
 
-  const [value, setValue] = useState('https://www.npmjs.com/package/');
+  const [value, setValue] = useState(CLIENT_HOST);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -83,6 +85,7 @@ export default function StreamItemHorizontal({ stream }: Props) {
 
   const {
     id,
+    slug,
     title,
     status,
     key,
@@ -94,7 +97,7 @@ export default function StreamItemHorizontal({ stream }: Props) {
     endDate,
   } = stream;
 
-  const statusStreaming = fLive(startDate.toString(), endDate.toString());
+  const statusStreaming = status !== 'draft' && fLive(startDate.toString(), endDate.toString());
 
   const renderStatusStreaming = statusStreaming && (
     <Label variant="filled" color={statusStreaming === 'Live' ? 'error' : 'warning'}>
@@ -218,7 +221,7 @@ export default function StreamItemHorizontal({ stream }: Props) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.stream.edit(title));
+            router.push(paths.dashboard.stream.edit(id));
           }}
         >
           <Iconify icon="solar:pen-bold" />
@@ -257,15 +260,15 @@ export default function StreamItemHorizontal({ stream }: Props) {
           <Stack direction="column" spacing={2} alignItems="center">
             <TextField
               fullWidth
-              value={title}
+              value={slug}
               onChange={handleChange}
-              onDoubleClick={handleClick}
+              // onDoubleClick={handleClick}
               label="Link by slug"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <Tooltip title="Copy">
-                      <IconButton onClick={() => onCopy(value)}>
+                      <IconButton onClick={() => onCopy(`${value}/${slug}`)}>
                         <Iconify icon="eva:copy-fill" width={24} />
                       </IconButton>
                     </Tooltip>
@@ -277,13 +280,13 @@ export default function StreamItemHorizontal({ stream }: Props) {
               fullWidth
               value={id}
               onChange={handleChange}
-              onDoubleClick={handleClick}
+              // onDoubleClick={handleClick}
               label="Link by ID"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <Tooltip title="Copy">
-                      <IconButton onClick={() => onCopy(value)}>
+                      <IconButton onClick={() => onCopy(`${value}/${id}`)}>
                         <Iconify icon="eva:copy-fill" width={24} />
                       </IconButton>
                     </Tooltip>
@@ -321,7 +324,7 @@ export default function StreamItemHorizontal({ stream }: Props) {
         title="Delete"
         content="Are you sure want to delete?"
         action={
-          <Button variant="contained" color="error">
+          <Button variant="contained" color="error" onClick={() => onDeleteStream(Number(id))}>
             Delete
           </Button>
         }

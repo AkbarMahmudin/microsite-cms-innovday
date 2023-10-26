@@ -12,10 +12,6 @@ export const POST_PUBLISH_OPTIONS = [
     label: 'Scheduled',
   },
   {
-    value: 'unpublished',
-    label: 'Unpublished',
-  },
-  {
     value: 'private',
     label: 'Private',
   },

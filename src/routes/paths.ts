@@ -107,7 +107,7 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/stream`,
       new: `${ROOTS.DASHBOARD}/stream/new`,
       details: (idOrSlug: number | string) => `${ROOTS.DASHBOARD}/stream/${idOrSlug}`,
-      edit: (title: string) => `${ROOTS.DASHBOARD}/stream/${paramCase(title)}/edit`,
+      edit: (idOrSlug: number | string) => `${ROOTS.DASHBOARD}/stream/${idOrSlug}/edit`,
       demo: {
         details: `${ROOTS.DASHBOARD}/stream/${paramCase(MOCK_TITLE)}`,
         edit: `${ROOTS.DASHBOARD}/stream/${paramCase(MOCK_TITLE)}/edit`,

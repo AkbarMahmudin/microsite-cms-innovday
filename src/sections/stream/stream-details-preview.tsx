@@ -12,8 +12,11 @@ import Markdown from 'src/components/markdown';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content';
 //
-import { Box, Grid, ListItemText } from '@mui/material';
+import { Box, Chip, Grid, ListItemText } from '@mui/material';
 import Iconify from 'src/components/iconify';
+// utils
+import { fDate } from 'src/utils/format-time';
+
 import StreamEmbed from './stream-embed';
 
 // ----------------------------------------------------------------------
@@ -22,7 +25,14 @@ type Props = {
   title: string;
   content: string;
   // description: string;
-  coverUrl: string;
+  thumbnail: string;
+  slidoId: string;
+  youtubeId: string;
+  startDate: string;
+  endDate: string;
+  speaker: string;
+  otherRole: any;
+  tags: string[];
   //
   open: boolean;
   isValid: boolean;
@@ -33,8 +43,15 @@ type Props = {
 
 export default function StreamDetailsPreview({
   title,
-  coverUrl,
+  thumbnail,
   content,
+  slidoId,
+  youtubeId,
+  startDate,
+  endDate,
+  speaker,
+  otherRole,
+  tags,
   // description,
   //
   open,
@@ -43,7 +60,7 @@ export default function StreamDetailsPreview({
   onSubmit,
   isSubmitting,
 }: Props) {
-  const hasContent = title || content || coverUrl;
+  const hasContent = title || content || thumbnail;
 
   return (
     <Dialog fullScreen open={open} onClose={onClose}>
@@ -63,7 +80,7 @@ export default function StreamDetailsPreview({
           loading={isSubmitting}
           onClick={onSubmit}
         >
-          Post
+          Create
         </LoadingButton>
       </DialogActions>
 
@@ -72,7 +89,7 @@ export default function StreamDetailsPreview({
       {hasContent ? (
         <Scrollbar>
           <Container sx={{ mt: 5, mb: 10 }}>
-            <StreamEmbed youtubeId="mccYpk0cEqw" autoplay />
+            <StreamEmbed youtubeId={youtubeId} slidoId={slidoId} />
 
             <Grid container>
               <Grid xs={12} md={8}>
@@ -87,6 +104,7 @@ export default function StreamDetailsPreview({
                 </Typography>
                 <Markdown children={content} />
               </Grid>
+
               <Grid
                 xs={12}
                 md={4}
@@ -112,17 +130,19 @@ export default function StreamDetailsPreview({
                   {[
                     {
                       label: 'Start Date',
-                      value: 'Wed, 20 Oct 2021',
+                      value: `${fDate(startDate)}`,
                       icon: <Iconify icon="solar:calendar-date-bold" />,
                     },
                     {
                       label: 'End Date',
-                      value: 'Wed, 20 Oct 2021',
+                      value: `${fDate(endDate)}`,
                       icon: <Iconify icon="solar:calendar-date-bold" />,
                     },
                     {
                       label: 'Time',
-                      value: '10:00 AM - 11:00 AM',
+                      value: `${new Date(startDate).toLocaleTimeString()} - ${new Date(
+                        endDate
+                      ).toLocaleTimeString()}`,
                       icon: <Iconify icon="solar:clock-circle-bold" />,
                     },
                     {
@@ -132,12 +152,12 @@ export default function StreamDetailsPreview({
                     },
                     {
                       label: 'Speaker',
-                      value: 'Mr. John Doe',
+                      value: `${speaker}`,
                       icon: <Iconify icon="solar:user-rounded-bold" />,
                     },
                     {
-                      label: 'Host',
-                      value: 'Mrs. Mary Doe',
+                      label: otherRole.role,
+                      value: `${otherRole.name}`,
                       icon: <Iconify icon="solar:user-rounded-bold" />,
                     },
                   ].map((item) => (
@@ -172,9 +192,9 @@ export default function StreamDetailsPreview({
                     borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
                   }}
                 >
-                  {/* {tags.map((tag) => (
+                  {tags.map((tag: any) => (
                     <Chip key={tag} label={`#${tag}`} variant="soft" />
-                  ))} */}
+                  ))}
                 </Box>
               </Grid>
             </Grid>

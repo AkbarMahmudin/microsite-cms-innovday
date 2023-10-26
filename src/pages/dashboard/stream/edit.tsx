@@ -9,7 +9,7 @@ import { StreamEditView } from 'src/sections/stream/view';
 export default function StreamEditPage() {
   const params = useParams();
 
-  const { title } = params;
+  const { idOrSlug } = params;
 
   return (
     <>
@@ -17,7 +17,7 @@ export default function StreamEditPage() {
         <title> Dashboard: Stream Edit</title>
       </Helmet>
 
-      <StreamEditView title={`${title}`} />
+      <StreamEditView id={Number(idOrSlug)} />
     </>
   );
 }

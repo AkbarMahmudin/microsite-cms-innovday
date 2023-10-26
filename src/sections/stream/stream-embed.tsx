@@ -1,6 +1,5 @@
-import { bo } from '@fullcalendar/core/internal-common';
 import { Box, Card } from '@mui/material';
-import React from 'react';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 type Props = {
   youtubeId?: string;
@@ -8,14 +7,16 @@ type Props = {
   autoplay?: boolean;
 };
 
-const renderYoutube = (youtubeId: string) =>
+const renderYoutube = (youtubeId: string, minHeight: number = 240) =>
   youtubeId && (
     <Card>
       <iframe
         width="100%"
         height="100%"
         src={`https://www.youtube.com/embed/${youtubeId}?si=i8DkcKd6mRgqNoHG`}
-        style={{ minHeight: '220px' }}
+        style={{
+          minHeight,
+        }}
         title="YouTube video player"
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -41,6 +42,8 @@ const renderSlido = (slidoId: string) =>
   );
 
 export default function StreamEmbed({ youtubeId = '', slidoId = '' }: Props) {
+  const smUp = useResponsive('up', 'sm');
+
   const boxProps = {
     rowGap: 1,
     columnGap: 2,
@@ -67,7 +70,7 @@ export default function StreamEmbed({ youtubeId = '', slidoId = '' }: Props) {
 
   return (
     <Box {...boxProps}>
-      {renderYoutube(youtubeId)}
+      {renderYoutube(youtubeId, smUp ? 480 : 240)}
       {renderSlido(slidoId)}
     </Box>
   );

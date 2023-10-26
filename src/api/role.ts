@@ -16,11 +16,11 @@ const options = {
   refreshWhenOffline: false,
 };
 
-export const useGetRoles = (query: any, revalidateOptions?: any) => {
+export const useGetRoles = (query: any, otherOptions?: any) => {
   const URLList = query ? [URL.list, { params: query }] : URL.list;
   const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, {
     ...options,
-    ...revalidateOptions,
+    ...otherOptions,
   });
   const data = resData?.data;
   const meta = resData?.meta;

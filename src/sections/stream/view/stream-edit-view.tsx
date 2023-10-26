@@ -3,7 +3,7 @@ import Container from '@mui/material/Container';
 // routes
 import { paths } from 'src/routes/paths';
 // api
-import { useGetPost } from 'src/api/blog';
+import { useGetStream } from 'src/api/stream';
 // components
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -13,13 +13,13 @@ import StreamNewEditForm from '../stream-new-edit-form';
 // ----------------------------------------------------------------------
 
 type Props = {
-  title: string;
+  id: number;
 };
 
-export default function StreamEditView({ title }: Props) {
+export default function StreamEditView({ id }: Props) {
   const settings = useSettingsContext();
 
-  const { post: currentPost } = useGetPost(title);
+  const { stream: currentStream, streamLoading } = useGetStream(id);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -35,7 +35,7 @@ export default function StreamEditView({ title }: Props) {
             href: paths.dashboard.stream.root,
           },
           {
-            name: currentPost?.title,
+            name: currentStream?.title,
           },
         ]}
         sx={{
@@ -43,7 +43,7 @@ export default function StreamEditView({ title }: Props) {
         }}
       />
 
-      <StreamNewEditForm currentPost={currentPost} />
+      {!streamLoading && <StreamNewEditForm currentStream={currentStream} />}
     </Container>
   );
 }

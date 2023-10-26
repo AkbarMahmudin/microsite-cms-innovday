@@ -46,12 +46,14 @@ import {
   styled,
 } from '@mui/material';
 import Iconify from 'src/components/iconify';
+// api
+import { useGetCategories } from 'src/api/category';
+import { createStream, updateStream } from 'src/api/stream';
+
 import StreamDetailsPreview from './stream-details-preview';
 import StreamUserAssignDialog from './stream-user-assign-dialog';
 
 // ----------------------------------------------------------------------
-
-const categories = ['All', 'App', 'Website', 'Landing Page', 'Dashboard', 'UI Kit'];
 
 // ----------------------------------------------------------------------
 
@@ -69,10 +71,10 @@ const StyledLabel = styled('span')(({ theme }) => ({
 // ----------------------------------------------------------------------
 
 type Props = {
-  currentPost?: IStreamItem;
+  currentStream?: IStreamItem;
 };
 
-export default function StreamNewEditForm({ currentPost }: Props) {
+export default function StreamNewEditForm({ currentStream }: Props) {
   const router = useRouter();
 
   const mdUp = useResponsive('up', 'md');
@@ -81,44 +83,64 @@ export default function StreamNewEditForm({ currentPost }: Props) {
 
   const preview = useBoolean();
 
-  const userAssign = useBoolean();
+  const userSpeakerAssign = useBoolean();
+  const userOtherRoleAssign = useBoolean();
 
-  const [isPublished, setIsPublished] = useState(currentPost?.publish === 'published');
+  const [status, setStatus] = useState(currentStream ? currentStream?.status : 'published');
+
+  const [speaker, setSpeaker] = useState(
+    currentStream ? currentStream?.users[0] : { id: 0, name: '', role: '' }
+  );
+  const [otherRole, setOtherRole] = useState(
+    currentStream ? currentStream?.users[1] : { id: 0, name: '', role: '' }
+  );
+
+  const { categories, categoriesLoading } = useGetCategories(
+    { limit: '*' },
+    {
+      revalidateOnFocus: true,
+      refreshInterval: false,
+      dedupingInterval: false,
+    }
+  );
 
   const NewStreamSchema = Yup.object().shape({
     title: Yup.string().required('Title is required'),
-    // description: Yup.string().required('Description is required'),
-    youtubeID: Yup.string().required('Youtube ID is required'),
-    slidoID: Yup.string().required('Slido ID is required'),
+    description: Yup.string().required('Description is required'),
+    youtubeId: Yup.string().required('Youtube ID is required'),
+    slidoId: Yup.string().required('Slido ID is required'),
     startDate: Yup.date().required('Start date is required'),
     endDate: Yup.date().required('End date is required'),
     content: Yup.string().required('Content is required'),
     coverUrl: Yup.mixed<any>().nullable().required('Cover is required'),
     tags: Yup.array().min(2, 'Must have at least 2 tags'),
-    metaKeywords: Yup.array().min(1, 'Meta keywords is required'),
     category: Yup.string().required('Category is required'),
+    userStream: Yup.string().required('User streamer role is required'),
+    // userSpeaker: Yup.string().required('User speaker is required'),
     // not required
-    metaTitle: Yup.string(),
-    metaDescription: Yup.string(),
-  });
+    publishedAt: Yup.date(),
+  }) as any;
 
   const defaultValues = useMemo(
     () => ({
-      title: currentPost?.title || '',
-      // description: currentPost?.description || '',
-      youtubeID: currentPost?.youtubeID || '',
-      slidoID: currentPost?.slidoID || '',
-      startDate: currentPost?.startDate || new Date(),
-      endDate: currentPost?.endDate || new Date(),
-      content: currentPost?.content || '',
-      coverUrl: currentPost?.coverUrl || null,
-      tags: currentPost?.tags || [],
-      metaKeywords: currentPost?.metaKeywords || [],
-      metaTitle: currentPost?.metaTitle || '',
-      metaDescription: currentPost?.metaDescription || '',
-      category: currentPost?.category || '',
+      // Post Properties
+      title: currentStream?.title || '',
+      description: currentStream?.description || '',
+      youtubeId: currentStream?.youtubeId || '',
+      slidoId: currentStream?.slidoId || '',
+      coverUrl: currentStream?.thumbnail || null,
+      content: currentStream?.content || '',
+      tags: currentStream?.tags || [],
+      category: currentStream?.category.id || '',
+      // Stream Properties
+      startDate: currentStream?.startDate || new Date(),
+      endDate: currentStream?.endDate || new Date(),
+      //
+      userStream:
+        currentStream?.users[1].role.replace(/\b\w/g, (c: string) => c.toUpperCase()) || '',
+      publishedAt: currentStream?.publishedAt || new Date(),
     }),
-    [currentPost]
+    [currentStream]
   );
 
   const methods = useForm({
@@ -137,21 +159,51 @@ export default function StreamNewEditForm({ currentPost }: Props) {
   const values = watch();
 
   useEffect(() => {
-    if (currentPost) {
+    if (currentStream) {
       reset(defaultValues);
     }
-  }, [currentPost, defaultValues, reset]);
+  }, [currentStream, defaultValues, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('youtubeId', data.youtubeId);
+      formData.append('slidoId', data.slidoId);
+      formData.append('startDate', data.startDate.toISOString() as any);
+      formData.append('endDate', data.endDate.toISOString() as any);
+      formData.append('content', data.content);
+      formData.append('thumbnail', data.coverUrl as any);
+      // eslint-disable-next-line no-restricted-syntax
+      for (const tag of data.tags) {
+        formData.append('tags[]', tag);
+      }
+      formData.append('categoryId', Number(data.category) as any);
+      formData.append('status', status);
+      formData.append('publishedAt', data.publishedAt.toISOString() as any);
+      formData.append('userStreamIds[speaker]', speaker.id as any);
+      formData.append(`userStreamIds[${data.userStream.toLocaleLowerCase()}]`, otherRole.id as any);
+
+      if (currentStream) {
+        await updateStream(Number(currentStream.id), formData);
+      } else {
+        await createStream(formData);
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       preview.onFalse();
-      enqueueSnackbar(currentPost ? 'Update success!' : 'Create success!');
+      enqueueSnackbar(currentStream ? 'Update success!' : 'Create success!');
       router.push(paths.dashboard.stream.root);
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
+      if (typeof error.message === 'string') {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      } else {
+        error.message.map((err: string) => enqueueSnackbar(err, { variant: 'error' }));
+      }
     }
   });
 
@@ -164,7 +216,7 @@ export default function StreamNewEditForm({ currentPost }: Props) {
       });
 
       if (file) {
-        setValue('coverUrl', newFile, { shouldValidate: true });
+        setValue('coverUrl', newFile as any, { shouldValidate: true });
       }
     },
     [setValue]
@@ -193,6 +245,8 @@ export default function StreamNewEditForm({ currentPost }: Props) {
 
           <Stack spacing={3} sx={{ p: 3 }}>
             <RHFTextField name="title" label="Stream Title" />
+
+            <RHFTextField name="description" label="Description" fullWidth multiline rows={3} />
 
             <Stack spacing={1.5}>
               <Typography variant="subtitle2">Content</Typography>
@@ -232,8 +286,8 @@ export default function StreamNewEditForm({ currentPost }: Props) {
           {!mdUp && <CardHeader title="Properties" />}
 
           <Stack spacing={3} sx={{ p: 3 }}>
-            <RHFTextField name="youtubeID" label="Youtube ID" />
-            <RHFTextField name="slidoID" label="Slido ID" />
+            <RHFTextField name="youtubeId" label="Youtube ID" />
+            <RHFTextField name="slidoId" label="Slido ID" />
             <Box
               rowGap={1}
               columnGap={2}
@@ -250,6 +304,8 @@ export default function StreamNewEditForm({ currentPost }: Props) {
                     name: 'startDate',
                   },
                 }}
+                defaultValue={new Date((currentStream?.startDate as Date) || new Date())}
+                onChange={(e) => methods.setValue('startDate', e as any)}
               />
               <DateTimePicker
                 label="End date"
@@ -258,6 +314,8 @@ export default function StreamNewEditForm({ currentPost }: Props) {
                     name: 'endDate',
                   },
                 }}
+                defaultValue={new Date((currentStream?.endDate as Date) || new Date())}
+                onChange={(e) => methods.setValue('endDate', e as any)}
               />
             </Box>
           </Stack>
@@ -288,48 +346,52 @@ export default function StreamNewEditForm({ currentPost }: Props) {
               <StyledLabel sx={{ height: 40, lineHeight: '40px' }}>Speaker</StyledLabel>
 
               <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={1}>
-                <Tooltip title="Edit speaker">
-                  <ListItem key={1} disableGutters onClick={userAssign.onTrue}>
-                    <ListItemAvatar>
-                      <Avatar src="https://mui.com/static/images/avatar/1.jpg" />
-                    </ListItemAvatar>
+                {speaker.id !== 0 ? (
+                  <Tooltip title="Edit speaker">
+                    <ListItem key={1} disableGutters onClick={userSpeakerAssign.onTrue}>
+                      <ListItemAvatar>
+                        <Avatar src="" />
+                      </ListItemAvatar>
 
-                    <ListItemText
-                      primaryTypographyProps={{
-                        typography: 'subtitle2',
-                        sx: { mb: 0.25 },
+                      <ListItemText
+                        primaryTypographyProps={{
+                          typography: 'subtitle2',
+                          sx: { mb: 0.25 },
+                        }}
+                        secondaryTypographyProps={{ typography: 'caption' }}
+                        primary={speaker.name}
+                        secondary=""
+                      />
+                    </ListItem>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Add speaker">
+                    <IconButton
+                      onClick={userSpeakerAssign.onTrue}
+                      sx={{
+                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                        border: (theme) => `dashed 1px ${theme.palette.divider}`,
                       }}
-                      secondaryTypographyProps={{ typography: 'caption' }}
-                      primary="Ming"
-                      secondary="ming@mail.com"
-                    />
-                  </ListItem>
-                </Tooltip>
+                      name="userSpeaker"
+                    >
+                      <Iconify icon="mingcute:add-line" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
-                {/* <Tooltip title="Add speaker">
-                  <IconButton
-                    onClick={userAssign.onTrue}
-                    sx={{
-                      bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                      border: (theme) => `dashed 1px ${theme.palette.divider}`,
-                    }}
-                  >
-                    <Iconify icon="mingcute:add-line" />
-                  </IconButton>
-                </Tooltip> */}
-
-                {/* <StreamUserAssignDialog
-                  // assignee={task.assignee}
-                  open={userAssign.value}
-                  onClose={userAssign.onFalse}
-                /> */}
+                <StreamUserAssignDialog
+                  assignee={speaker}
+                  open={userSpeakerAssign.value}
+                  onClose={userSpeakerAssign.onFalse}
+                  onAssign={setSpeaker}
+                />
               </Stack>
             </Stack>
             <Stack direction="row" spacing={10}>
               <StyledLabel sx={{ lineHeight: '40px' }}>
                 <RHFAutocomplete
                   name="userStream"
-                  options={['Host', 'Moderator'].map((user) => user)}
+                  options={['Host', 'Moderator'].map((userRole) => userRole)}
                   getOptionLabel={(option) => option}
                   isOptionEqualToValue={(option, value) => option === value}
                   renderOption={(props, option) => {
@@ -349,33 +411,44 @@ export default function StreamNewEditForm({ currentPost }: Props) {
               </StyledLabel>
 
               <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={1}>
-                {/* {task.assignee.map((user) => (
-                  <Avatar key={user.id} alt={user.name} src={user.avatarUrl} />
-                ))} */}
+                {otherRole.id !== 0 ? (
+                  <Tooltip title="Edit Host/Moderator">
+                    <ListItem key={1} disableGutters onClick={userOtherRoleAssign.onTrue}>
+                      <ListItemAvatar>
+                        <Avatar src="" />
+                      </ListItemAvatar>
 
-                <Tooltip title="Add moderator / host">
-                  <IconButton
-                    onClick={userAssign.onTrue}
-                    sx={{
-                      bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                      border: (theme) => `dashed 1px ${theme.palette.divider}`,
-                    }}
-                  >
-                    <Iconify icon="mingcute:add-line" />
-                  </IconButton>
-                </Tooltip>
+                      <ListItemText
+                        primaryTypographyProps={{
+                          typography: 'subtitle2',
+                          sx: { mb: 0.25 },
+                        }}
+                        secondaryTypographyProps={{ typography: 'caption' }}
+                        primary={otherRole.name}
+                        secondary=""
+                      />
+                    </ListItem>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Add Host/Moderator">
+                    <IconButton
+                      onClick={userOtherRoleAssign.onTrue}
+                      sx={{
+                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                        border: (theme) => `dashed 1px ${theme.palette.divider}`,
+                      }}
+                    >
+                      <Iconify icon="mingcute:add-line" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
                 <StreamUserAssignDialog
-                  // assignee={task.assignee}
-                  open={userAssign.value}
-                  onClose={userAssign.onFalse}
+                  assignee={otherRole}
+                  open={userOtherRoleAssign.value}
+                  onClose={userOtherRoleAssign.onFalse}
+                  onAssign={setOtherRole}
                 />
-
-                {/* <KanbanContactsDialog
-                  // assignee={task.assignee}
-                  // open={contacts.value}
-                  // onClose={contacts.onFalse}
-                /> */}
               </Stack>
             </Stack>
           </Stack>
@@ -402,26 +475,36 @@ export default function StreamNewEditForm({ currentPost }: Props) {
           {!mdUp && <CardHeader title="Properties" />}
 
           <Stack spacing={3} sx={{ p: 3 }}>
-            <RHFAutocomplete
-              name="category"
-              label="Category"
-              options={categories.map((category) => category)}
-              getOptionLabel={(option) => option}
-              isOptionEqualToValue={(option, value) => option === value}
-              renderOption={(props, option) => {
-                const categoryName = categories.filter((category) => category === option)[0];
-
-                if (!categoryName) {
-                  return null;
+            {!categoriesLoading && (
+              <RHFAutocomplete
+                name="category"
+                label="Category"
+                options={categories.map((category) => category.id)}
+                getOptionLabel={(option) =>
+                  categories
+                    .filter((category) => category.id === option)
+                    .map((category) =>
+                      category.name.replace(/\b\w/g, (c: string) => c.toUpperCase())
+                    )[0] || ''
                 }
+                isOptionEqualToValue={(option, value) => option === value}
+                renderOption={(props, option) => {
+                  const { id, name: categoryName } = categories.filter(
+                    (category) => category.id === option
+                  )[0];
 
-                return (
-                  <li {...props} key={categoryName}>
-                    {categoryName}
-                  </li>
-                );
-              }}
-            />
+                  if (!categoryName) {
+                    return null;
+                  }
+
+                  return (
+                    <li {...props} key={id}>
+                      {categoryName}
+                    </li>
+                  );
+                }}
+              />
+            )}
 
             <RHFAutocomplete
               name="tags"
@@ -450,52 +533,24 @@ export default function StreamNewEditForm({ currentPost }: Props) {
               }
             />
 
-            {/* <RHFTextField name="metaTitle" label="Meta title" />
-
-            <RHFTextField
-              name="metaDescription"
-              label="Meta description"
-              fullWidth
-              multiline
-              rows={3}
-            />
-
-            <RHFAutocomplete
-              name="metaKeywords"
-              label="Meta keywords"
-              placeholder="+ Keywords"
-              multiple
-              freeSolo
-              disableCloseOnSelect
-              options={_tags.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={status === 'private'}
+                  onChange={(e) => {
+                    setStatus(e.target.checked ? 'private' : 'draft');
+                  }}
+                />
               }
-            /> */}
-
-            <FormControlLabel control={<Switch />} label="Create as private" />
+              label="Create as private"
+            />
           </Stack>
         </Card>
       </Grid>
     </>
   );
 
-  const renderScheduled = !isPublished && (
+  const renderScheduled = status !== 'published' && status !== 'private' && (
     <>
       {mdUp && (
         <Grid md={4}>
@@ -513,7 +568,19 @@ export default function StreamNewEditForm({ currentPost }: Props) {
           {!mdUp && <CardHeader title="Published at" />}
 
           <Stack spacing={3} sx={{ p: 3 }}>
-            <DateTimePicker defaultValue={new Date()} label="Published date" />
+            <DateTimePicker
+              label="Published date"
+              slotProps={{
+                textField: {
+                  name: 'publishedAt',
+                },
+              }}
+              defaultValue={new Date(currentStream?.publishedAt || (new Date() as Date))}
+              onChange={(e) => {
+                setStatus('scheduled');
+                methods.setValue('publishedAt', e as any);
+              }}
+            />
           </Stack>
         </Card>
       </Grid>
@@ -526,7 +593,12 @@ export default function StreamNewEditForm({ currentPost }: Props) {
       <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center' }}>
         <FormControlLabel
           control={
-            <Switch checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
+            <Switch
+              checked={status === 'published'}
+              onChange={(e) => {
+                setStatus(e.target.checked ? 'published' : 'draft');
+              }}
+            />
           }
           label="Publish"
           sx={{ flexGrow: 1, pl: 3 }}
@@ -543,7 +615,7 @@ export default function StreamNewEditForm({ currentPost }: Props) {
           loading={isSubmitting}
           sx={{ ml: 2 }}
         >
-          {!currentPost ? 'Create Stream' : 'Save Changes'}
+          {!currentStream ? 'Create Stream' : 'Save Changes'}
         </LoadingButton>
       </Grid>
     </>
@@ -568,11 +640,21 @@ export default function StreamNewEditForm({ currentPost }: Props) {
       <StreamDetailsPreview
         title={values.title}
         content={values.content}
+        youtubeId={values.youtubeId}
+        slidoId={values.slidoId}
+        startDate={values.startDate as any}
+        endDate={values.endDate as any}
+        speaker={speaker.name}
+        otherRole={{
+          name: otherRole.name,
+          role: values.userStream,
+        }}
+        tags={values.tags}
         // description={values.description}
-        coverUrl={
+        thumbnail={
           typeof values.coverUrl === 'string'
             ? values.coverUrl
-            : `${(values.coverUrl as CustomFile)?.preview}`
+            : `${(values.coverUrl as unknown as CustomFile)?.preview}`
         }
         //
         open={preview.value}

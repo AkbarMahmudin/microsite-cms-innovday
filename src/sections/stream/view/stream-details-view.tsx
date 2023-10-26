@@ -11,7 +11,7 @@ import { RouterLink } from 'src/routes/components';
 // _mock
 import { POST_PUBLISH_OPTIONS } from 'src/_mock';
 // api
-import { useGetStream } from 'src/api/stream';
+import { updateStream, useGetStream } from 'src/api/stream';
 // components
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
@@ -19,6 +19,7 @@ import EmptyContent from 'src/components/empty-content';
 //
 import { Box, Grid, ListItemText } from '@mui/material';
 import { fDate } from 'src/utils/format-time';
+import { enqueueSnackbar } from 'notistack';
 import { StreamDetailsSkeleton } from '../stream-skeleton';
 import StreamDetailsToolbar from '../stream-details-toolbar';
 import StreamEmbed from '../stream-embed';
@@ -34,9 +35,28 @@ export default function StreamDetailsView({ id }: Props) {
 
   const { stream, streamLoading, streamError } = useGetStream(id);
 
-  const handleChangePublish = useCallback((newValue: string) => {
-    setPublish(newValue);
-  }, []);
+  const handleChangePublish = useCallback(
+    async (newValue: string) => {
+      try {
+        setPublish(newValue);
+        const data = {
+          status: newValue,
+          ...(newValue === 'published' && { publishedAt: new Date().toISOString() }),
+        };
+        await updateStream(id, data);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        enqueueSnackbar('Update success!');
+      } catch (error) {
+        if (typeof error.message === 'string') {
+          enqueueSnackbar(error.message, { variant: 'error' });
+        } else {
+          error.message.map((err: string) => enqueueSnackbar(err, { variant: 'error' }));
+        }
+      }
+      setPublish(newValue);
+    },
+    [id]
+  );
 
   useEffect(() => {
     if (stream) {
@@ -70,17 +90,14 @@ export default function StreamDetailsView({ id }: Props) {
     <>
       <StreamDetailsToolbar
         backLink={paths.dashboard.stream.root}
-        editLink={paths.dashboard.stream.edit(`${stream?.title}`)}
+        editLink={paths.dashboard.stream.edit(stream?.id)}
         liveLink={paths.post.details(`${stream?.title}`)}
         publish={publish || ''}
         onChangePublish={handleChangePublish}
         publishOptions={POST_PUBLISH_OPTIONS}
       />
 
-      {/* <StreamDetailsHero title={post.title} coverUrl={post.coverUrl} /> */}
-
       <StreamEmbed youtubeId={stream.youtubeId} slidoId={stream.slidoId} />
-      {/* <StreamEmbed youtubeId="mccYpk0cEqw" /> */}
 
       <Grid container>
         <Grid xs={12} md={8}>
@@ -95,7 +112,7 @@ export default function StreamDetailsView({ id }: Props) {
           </Typography>
           <Markdown children={stream.content} />
         </Grid>
-        
+
         <Grid
           xs={12}
           md={4}
@@ -131,7 +148,9 @@ export default function StreamDetailsView({ id }: Props) {
               },
               {
                 label: 'Time',
-                value: `${new Date(stream.startDate).toLocaleTimeString()} - ${new Date(stream.endDate).toLocaleTimeString()}`,
+                value: `${new Date(stream.startDate).toLocaleTimeString()} - ${new Date(
+                  stream.endDate
+                ).toLocaleTimeString()}`,
                 icon: <Iconify icon="solar:clock-circle-bold" />,
               },
               {

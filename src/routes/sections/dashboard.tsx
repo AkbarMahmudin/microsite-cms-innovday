@@ -88,8 +88,8 @@ export const dashboardRoutes = [
         children: [
           { element: <StreamsPage />, index: true },
           { path: 'list', element: <StreamsPage /> },
-          { path: ':id', element: <StreamPage /> },
-          { path: ':title/edit', element: <StreamEditPage /> },
+          { path: ':idOrSlug', element: <StreamPage /> },
+          { path: ':idOrSlug/edit', element: <StreamEditPage /> },
           { path: 'new', element: <StreamNewPage /> },
         ],
       },

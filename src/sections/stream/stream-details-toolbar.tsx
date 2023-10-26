@@ -59,13 +59,13 @@ export default function StreamDetailsToolbar({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {publish === 'published' && (
+        {/* {publish === 'published' && (
           <Tooltip title="Go Live">
             <IconButton component={RouterLink} href={liveLink}>
               <Iconify icon="eva:external-link-fill" />
             </IconButton>
           </Tooltip>
-        )}
+        )} */}
 
         <Tooltip title="Edit">
           <IconButton component={RouterLink} href={editLink}>
@@ -92,7 +92,7 @@ export default function StreamDetailsToolbar({
         arrow="top-right"
         sx={{ width: 140 }}
       >
-        {publishOptions.map((option) => (
+        {publishOptions.filter((option) => option.value !== 'scheduled').map((option) => (
           <MenuItem
             key={option.value}
             selected={option.value === publish}
@@ -103,6 +103,8 @@ export default function StreamDetailsToolbar({
           >
             {option.value === 'published' && <Iconify icon="eva:cloud-upload-fill" />}
             {option.value === 'draft' && <Iconify icon="solar:file-text-bold" />}
+            {option.value === 'private' && <Iconify icon="eva:clock-fill" />}
+            {option.value === 'archived' && <Iconify icon="eva:archive-fill" />}
             {option.label}
           </MenuItem>
         ))}

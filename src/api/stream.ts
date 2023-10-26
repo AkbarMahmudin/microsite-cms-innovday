@@ -17,10 +17,13 @@ const options = {
   // refreshWhenOffline: false,
 };
 
-export const useGetStreams = (query: any) => {
+export const useGetStreams = (query: any, otherOptions?: any) => {
   const URLList = query ? [URL.list, { params: query }] : null;
 
-  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, options);
+  const { data: resData, isLoading, error, isValidating } = useSWR(URLList, fetcher, {
+    ...options,
+    ...otherOptions,
+  });
 
   const data = resData?.data;
   const meta = resData?.meta;
@@ -60,4 +63,43 @@ export const useGetStream = (id: number) => {
   );
 
   return memoizedValue;
+};
+
+export const createStream = async (data: any) => {
+  const URLCreate = `${URL.create}`;
+  const { data: res } = await axios.post(URLCreate, data, {
+    headers: {
+      Authorization: `Bearer ${ACCESSTOKEN}`,
+    },
+  });
+
+  mutate(URL.list);
+
+  return res.data;
+};
+
+export const updateStream = async (id: number, data: any) => {
+  const URLUpdate = `${URL.update}/${id}`;
+  const { data: res } = await axios.patch(URLUpdate, data, {
+    headers: {
+      Authorization: `Bearer ${ACCESSTOKEN}`,
+    },
+  });
+
+  mutate(URL.list);
+
+  return res.data;
+};
+
+export const deleteStream = async (id: number) => {
+  const URLDelete = `${URL.delete}/${id}`;
+  const { data: res } = await axios.delete(URLDelete, {
+    headers: {
+      Authorization: `Bearer ${ACCESSTOKEN}`,
+    },
+  });
+
+  mutate(URL.list);
+
+  return res.data;
 };

@@ -45,6 +45,7 @@ export type IStreamItem = {
   slug: string;
   tags: string[];
   category: {
+    id: number,
     name: string;
   };
   status: string;
@@ -65,10 +66,15 @@ export type IStreamItem = {
     name: string;
     avatarUrl?: string;
   };
-  youtubeID: string;
-  slidoID: string;
+  youtubeId: string;
+  slidoId: string;
   startDate: Date;
   endDate: Date;
+  users: {
+    id: number;
+    name: string;
+    role: string;
+  }[];
 };
 
 export const StreamStatusColor: any = {
