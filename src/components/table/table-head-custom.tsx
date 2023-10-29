@@ -54,13 +54,13 @@ export default function TableHeadCustom({
         {onSelectAllRows && (
           <RoleBasedGuard roles={rolesAccess}>
             <TableCell padding="checkbox">
-              <Checkbox
+              {/* <Checkbox
                 indeterminate={!!numSelected && numSelected < rowCount}
                 checked={!!rowCount && numSelected === rowCount}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   onSelectAllRows(event.target.checked)
                 }
-              />
+              /> */}
             </TableCell>
           </RoleBasedGuard>
         )}
