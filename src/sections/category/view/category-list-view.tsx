@@ -43,6 +43,9 @@ import { deleteCategories, deleteCategory, useGetCategories } from 'src/api/cate
 
 import { enqueueSnackbar } from 'notistack';
 
+import { RoleBasedGuard } from 'src/auth/guard';
+import { ROLE_PERMISSION } from 'src/config-global';
+
 import CategoryTableToolbar from '../category-table-toolbar';
 import CategoryTableFiltersResult from '../category-table-filters-result';
 import CategoryTableRow from '../category-table-row';
@@ -73,6 +76,8 @@ export default function CategoryListView() {
   const confirm = useBoolean();
 
   const quickNew = useBoolean();
+
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS, ...ROLE_PERMISSION.RESTRICTED];
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -147,7 +152,7 @@ export default function CategoryListView() {
   }, []);
 
   return (
-    <>
+    <RoleBasedGuard hasContent roles={rolesAccess} sx={{ py: 10 }}>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
           heading="List"
@@ -159,7 +164,6 @@ export default function CategoryListView() {
           action={
             <Button
               component={RouterLink}
-              // href={paths.dashboard.user.new}
               variant="contained"
               startIcon={<Iconify icon="mingcute:add-line" />}
               onClick={quickNew.onTrue}
@@ -184,7 +188,7 @@ export default function CategoryListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={meta?.total_data || 5}
+              results={meta?.total_data}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -288,7 +292,7 @@ export default function CategoryListView() {
           </Button>
         }
       />
-    </>
+    </RoleBasedGuard>
   );
 }
 

@@ -38,7 +38,8 @@ import { useCopyToClipboard } from 'src/hooks/use-copy-to-clipboard';
 import { useCallback, useState } from 'react';
 import { useDoubleClick } from 'src/hooks/use-double-click';
 import { useSnackbar } from 'notistack';
-import { CLIENT_HOST } from 'src/config-global';
+import { CLIENT_HOST, ROLE_PERMISSION } from 'src/config-global';
+import { RoleBasedGuard } from 'src/auth/guard';
 
 // ----------------------------------------------------------------------
 
@@ -58,6 +59,8 @@ export default function StreamItemHorizontal({ stream, onDeleteStream }: Props) 
   const isDeleteConfirm = useBoolean();
 
   const showShareModal = useBoolean();
+
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS, ...ROLE_PERMISSION.RESTRICTED];
 
   const [value, setValue] = useState(CLIENT_HOST);
 
@@ -218,26 +221,28 @@ export default function StreamItemHorizontal({ stream, onDeleteStream }: Props) 
           Share
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            router.push(paths.dashboard.stream.edit(id));
-          }}
-        >
-          <Iconify icon="solar:pen-bold" />
-          Edit
-        </MenuItem>
+        <RoleBasedGuard roles={rolesAccess}>
+          <MenuItem
+            onClick={() => {
+              popover.onClose();
+              router.push(paths.dashboard.stream.edit(id));
+            }}
+          >
+            <Iconify icon="solar:pen-bold" />
+            Edit
+          </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            isDeleteConfirm.onTrue();
-            popover.onClose();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
+          <MenuItem
+            onClick={() => {
+              isDeleteConfirm.onTrue();
+              popover.onClose();
+            }}
+            sx={{ color: 'error.main' }}
+          >
+            <Iconify icon="solar:trash-bin-trash-bold" />
+            Delete
+          </MenuItem>
+        </RoleBasedGuard>
       </CustomPopover>
 
       <Dialog

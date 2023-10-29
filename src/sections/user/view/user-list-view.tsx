@@ -40,6 +40,10 @@ import { useGetRoles } from 'src/api/role';
 import { useDebounce } from 'src/hooks/use-debounce';
 import { enqueueSnackbar } from 'notistack';
 
+// guard
+import { RoleBasedGuard } from 'src/auth/guard';
+import { ROLE_PERMISSION } from 'src/config-global';
+
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
@@ -76,6 +80,7 @@ export default function UserListView() {
 
   // ROLE
   const { roles } = useGetRoles({ limit: '*' });
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS];
 
   // USER
   const { users, meta, usersEmpty } = useGetUsers({
@@ -151,7 +156,7 @@ export default function UserListView() {
   }, []);
 
   return (
-    <>
+    <RoleBasedGuard hasContent roles={rolesAccess} sx={{ py: 10 }}>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
           heading="List"
@@ -293,7 +298,7 @@ export default function UserListView() {
           </Button>
         }
       />
-    </>
+    </RoleBasedGuard>
   );
 }
 

@@ -14,6 +14,9 @@ import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 //
+import { RoleBasedGuard } from 'src/auth/guard';
+import { ROLE_PERMISSION } from 'src/config-global';
+
 import CategoryQuickNewEditForm from './category-quick-new-edit-form';
 
 // ----------------------------------------------------------------------
@@ -41,12 +44,16 @@ export default function CategoryTableRow({
 
   const popover = usePopover();
 
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS];
+
   return (
     <>
       <TableRow hover selected={selected}>
-        <TableCell padding="checkbox">
-          <Checkbox checked={selected} onClick={onSelectRow} />
-        </TableCell>
+        <RoleBasedGuard roles={rolesAccess}>
+          <TableCell padding="checkbox">
+            <Checkbox checked={selected} onClick={onSelectRow} />
+          </TableCell>
+        </RoleBasedGuard>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{name}</TableCell>
 
@@ -59,17 +66,19 @@ export default function CategoryTableRow({
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Delete" placement="top" arrow>
-            <IconButton
-              color="error"
-              onClick={() => {
-                confirm.onTrue();
-                popover.onClose();
-              }}
-            >
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
-          </Tooltip>
+          <RoleBasedGuard roles={rolesAccess}>
+            <Tooltip title="Delete" placement="top" arrow>
+              <IconButton
+                color="error"
+                onClick={() => {
+                  confirm.onTrue();
+                  popover.onClose();
+                }}
+              >
+                <Iconify icon="solar:trash-bin-trash-bold" />
+              </IconButton>
+            </Tooltip>
+          </RoleBasedGuard>
         </TableCell>
       </TableRow>
 

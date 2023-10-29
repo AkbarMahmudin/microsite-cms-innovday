@@ -22,6 +22,9 @@ import { IStreamFilters, IStreamFilterValue, StreamStatusColor } from 'src/types
 // api
 import { deleteStream, useGetStreams } from 'src/api/stream';
 
+import { ROLE_PERMISSION } from 'src/config-global';
+import { RoleBasedGuard } from 'src/auth/guard';
+
 import { enqueueSnackbar } from 'notistack';
 import StreamSort from '../stream-sort';
 import StreamSearch from '../stream-search';
@@ -38,6 +41,8 @@ const defaultFilters: IStreamFilters = {
 
 export default function StreamListView() {
   const settings = useSettingsContext();
+
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS, ...ROLE_PERMISSION.RESTRICTED];
 
   const [sortBy, setSortBy] = useState('latest');
 
@@ -61,14 +66,17 @@ export default function StreamListView() {
     title: debouncedQuery,
   });
 
-  const { streams, status, meta, streamsLoading } = useGetStreams({
-    limit: 9,
-    page: filters.page,
-    status: filters.publish !== 'all' ? filters.publish : '',
-    sort: {
-      createdAt: sortBy === 'latest' ? 'desc' : 'asc',
+  const { streams, status, meta, streamsLoading } = useGetStreams(
+    {
+      limit: 9,
+      page: filters.page,
+      status: filters.publish !== 'all' ? filters.publish : '',
+      sort: {
+        createdAt: sortBy === 'latest' ? 'desc' : 'asc',
+      },
     },
-  }, configs);
+    configs
+  );
 
   const handleSortBy = useCallback((newValue: string) => {
     setSortBy(newValue);
@@ -130,98 +138,102 @@ export default function StreamListView() {
   }, []);
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="List"
-        links={[
-          {
-            name: 'Dashboard',
-            href: paths.dashboard.root,
-          },
-          {
-            name: 'Stream',
-            href: paths.dashboard.stream.root,
-          },
-          {
-            name: 'List',
-          },
-        ]}
-        action={
-          <Button
-            component={RouterLink}
-            href={paths.dashboard.stream.new}
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            New Stream
-          </Button>
-        }
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      />
-
-      <Stack
-        spacing={3}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-end', sm: 'center' }}
-        direction={{ xs: 'column', sm: 'row' }}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      >
-        <StreamSearch
-          query={debouncedQuery}
-          results={searchResults}
-          onSearch={handleSearch}
-          loading={searchLoading}
-          hrefItem={(slug: string) => paths.dashboard.stream.details(slug)}
+    <RoleBasedGuard hasContent roles={[...rolesAccess, ...ROLE_PERMISSION.READ_ONLY]} sx={{ py: 10 }}>
+      <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+        <CustomBreadcrumbs
+          heading="List"
+          links={[
+            {
+              name: 'Dashboard',
+              href: paths.dashboard.root,
+            },
+            {
+              name: 'Stream',
+              href: paths.dashboard.stream.root,
+            },
+            {
+              name: 'List',
+            },
+          ]}
+          action={
+            <RoleBasedGuard roles={rolesAccess}>
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.stream.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                New Stream
+              </Button>
+            </RoleBasedGuard>
+          }
+          sx={{
+            mb: { xs: 3, md: 5 },
+          }}
         />
 
-        <StreamSort sort={sortBy} onSort={handleSortBy} sortOptions={POST_SORT_OPTIONS} />
-      </Stack>
-
-      {!streamsLoading && (
-        <Tabs
-          value={filters.publish}
-          onChange={handleFilterPublish}
+        <Stack
+          spacing={3}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-end', sm: 'center' }}
+          direction={{ xs: 'column', sm: 'row' }}
           sx={{
             mb: { xs: 3, md: 5 },
           }}
         >
-          {[...Object.keys(status)]
-            .map((tab) => (
-              <Tab
-                key={tab}
-                iconPosition="end"
-                value={tab}
-                label={tab}
-                icon={
-                  <Label
-                    variant={((tab === 'all' || tab === filters.publish) && 'filled') || 'soft'}
-                    color={StreamStatusColor[tab.toUpperCase()]}
-                  >
-                    {status[tab]}
-                  </Label>
-                }
-                sx={{ textTransform: 'capitalize' }}
-              />
-            ))
-            .sort((a, b) => {
-              if (a.key === 'all') return -1;
-              if (b.key === 'all') return 1;
-              return 0;
-            })}
-        </Tabs>
-      )}
+          <StreamSearch
+            query={debouncedQuery}
+            results={searchResults}
+            onSearch={handleSearch}
+            loading={searchLoading}
+            hrefItem={(slug: string) => paths.dashboard.stream.details(slug)}
+          />
 
-      <StreamListHorizontal
-        streams={streams}
-        meta={meta}
-        onPageChange={handlePageChange}
-        onDeleteStream={handleDeleteStream}
-        loading={streamsLoading}
-      />
-    </Container>
+          <StreamSort sort={sortBy} onSort={handleSortBy} sortOptions={POST_SORT_OPTIONS} />
+        </Stack>
+
+        {!streamsLoading && (
+          <Tabs
+            value={filters.publish}
+            onChange={handleFilterPublish}
+            sx={{
+              mb: { xs: 3, md: 5 },
+            }}
+          >
+            {[...Object.keys(status)]
+              .map((tab) => (
+                <Tab
+                  key={tab}
+                  iconPosition="end"
+                  value={tab}
+                  label={tab}
+                  icon={
+                    <Label
+                      variant={((tab === 'all' || tab === filters.publish) && 'filled') || 'soft'}
+                      color={StreamStatusColor[tab.toUpperCase()]}
+                    >
+                      {status[tab]}
+                    </Label>
+                  }
+                  sx={{ textTransform: 'capitalize' }}
+                />
+              ))
+              .sort((a, b) => {
+                if (a.key === 'all') return -1;
+                if (b.key === 'all') return 1;
+                return 0;
+              })}
+          </Tabs>
+        )}
+
+        <StreamListHorizontal
+          streams={streams}
+          meta={meta}
+          onPageChange={handlePageChange}
+          onDeleteStream={handleDeleteStream}
+          loading={streamsLoading}
+        />
+      </Container>
+    </RoleBasedGuard>
   );
 }

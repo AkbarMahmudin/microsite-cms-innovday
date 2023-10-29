@@ -42,6 +42,8 @@ export default function AccountPopover() {
 
   const { logout, user } = useAuthContext();
 
+  console.log('user', user);
+
   const { enqueueSnackbar } = useSnackbar();
 
   const popover = usePopover();

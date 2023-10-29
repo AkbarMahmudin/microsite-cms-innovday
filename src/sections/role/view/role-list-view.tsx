@@ -39,6 +39,9 @@ import { useGetRoles, deleteRole, deleteRoles } from 'src/api/role';
 
 import { enqueueSnackbar } from 'notistack';
 
+import { ROLE_PERMISSION } from 'src/config-global';
+import { RoleBasedGuard } from 'src/auth/guard';
+
 import RoleTableToolbar from '../role-table-toolbar';
 import RoleTableFiltersResult from '../role-table-filters-result';
 import RoleTableRow from '../role-table-row';
@@ -68,7 +71,7 @@ export default function RoleListView() {
 
   const quickNew = useBoolean();
 
-  // const [tableData, setTableData] = useState(_categoryList);
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS];
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -88,7 +91,6 @@ export default function RoleListView() {
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
-
 
   const dataInPage = dataFiltered;
 
@@ -149,7 +151,7 @@ export default function RoleListView() {
   }, []);
 
   return (
-    <>
+    <RoleBasedGuard hasContent roles={rolesAccess} sx={{ py: 10 }}>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
           heading="List"
@@ -287,7 +289,7 @@ export default function RoleListView() {
           </Button>
         }
       />
-    </>
+    </RoleBasedGuard>
   );
 }
 

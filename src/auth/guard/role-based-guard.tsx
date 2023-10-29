@@ -9,6 +9,7 @@ import { useMockedUser } from 'src/hooks/use-mocked-user';
 import { ForbiddenIllustration } from 'src/assets/illustrations';
 // components
 import { MotionContainer, varBounce } from 'src/components/animate';
+import { useAuthContext } from '../hooks';
 
 // ----------------------------------------------------------------------
 
@@ -21,10 +22,11 @@ type RoleBasedGuardProp = {
 
 export default function RoleBasedGuard({ hasContent, roles, children, sx }: RoleBasedGuardProp) {
   // Logic here to get current user role
-  const { user } = useMockedUser();
+  // const { user } = useMockedUser();
+  const { user } = useAuthContext();
 
   // const currentRole = 'user';
-  const currentRole = user?.role; // admin;
+  const currentRole = user?.role.name; // admin;
 
   if (typeof roles !== 'undefined' && !roles.includes(currentRole)) {
     return hasContent ? (

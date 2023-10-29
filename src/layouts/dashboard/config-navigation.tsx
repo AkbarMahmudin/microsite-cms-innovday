@@ -6,6 +6,8 @@ import { useLocales } from 'src/locales';
 // components
 import SvgColor from 'src/components/svg-color';
 
+import { ROLE_PERMISSION } from 'src/config-global';
+
 // ----------------------------------------------------------------------
 
 const icon = (name: string) => (
@@ -43,6 +45,8 @@ const ICONS = {
   dashboard: icon('ic_dashboard'),
   stream: icon('ic_stream'),
 };
+
+const { ALL_ACCESS, RESTRICTED, READ_ONLY } = ROLE_PERMISSION;
 
 // ----------------------------------------------------------------------
 
@@ -99,11 +103,12 @@ export function useNavData() {
             title: t('user'),
             path: paths.dashboard.user.root,
             icon: ICONS.user,
+            roles: ALL_ACCESS,
             children: [
               // { title: t('profile'), path: paths.dashboard.user.root },
               // { title: t('cards'), path: paths.dashboard.user.cards },
-              { title: t('list'), path: paths.dashboard.user.list },
-              { title: t('create'), path: paths.dashboard.user.new },
+              { title: t('list'), path: paths.dashboard.user.list, roles: ALL_ACCESS },
+              { title: t('create'), path: paths.dashboard.user.new, roles: ALL_ACCESS },
               // { title: t('edit'), path: paths.dashboard.user.demo.edit },
               // { title: t('account'), path: paths.dashboard.user.account },
             ],
@@ -157,6 +162,7 @@ export function useNavData() {
             title: t('role'),
             path: paths.dashboard.role.root,
             icon: ICONS.lock,
+            roles: ALL_ACCESS,
           },
 
           // CATEGORY
@@ -164,31 +170,39 @@ export function useNavData() {
             title: t('category'),
             path: paths.dashboard.category.root,
             icon: ICONS.folder,
+            roles: [...ALL_ACCESS, ...RESTRICTED],
           },
 
           // Post
-          {
-            title: t('post'),
-            path: paths.dashboard.post.root,
-            icon: ICONS.blog,
-            children: [
-              { title: t('list'), path: paths.dashboard.post.root },
-              // { title: t('details'), path: paths.dashboard.post.demo.details },
-              { title: t('create'), path: paths.dashboard.post.new },
-              // { title: t('edit'), path: paths.dashboard.post.demo.edit },
-            ],
-          },
+          // {
+          //   title: t('post'),
+          //   path: paths.dashboard.post.root,
+          //   icon: ICONS.blog,
+          //   children: [
+          //     { title: t('list'), path: paths.dashboard.post.root },
+          //     // { title: t('details'), path: paths.dashboard.post.demo.details },
+          //     { title: t('create'), path: paths.dashboard.post.new },
+          //     // { title: t('edit'), path: paths.dashboard.post.demo.edit },
+          //   ],
+          // },
 
           // Stream
           {
             title: t('stream'),
             path: paths.dashboard.stream.root,
             icon: ICONS.stream,
+            roles: [...ALL_ACCESS, ...RESTRICTED, ...READ_ONLY],
             children: [
-              { title: t('list'), path: paths.dashboard.stream.root },
-              // { title: t('details'), path: paths.dashboard.stream.demo.details },
-              { title: t('create'), path: paths.dashboard.stream.new },
-              // { title: t('edit'), path: paths.dashboard.post.demo.edit },
+              {
+                title: t('list'),
+                path: paths.dashboard.stream.root,
+                roles: [...ALL_ACCESS, ...RESTRICTED, ...READ_ONLY],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.stream.new,
+                roles: [...ALL_ACCESS, ...RESTRICTED],
+              },
             ],
           },
 

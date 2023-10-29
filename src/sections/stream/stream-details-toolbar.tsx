@@ -11,6 +11,8 @@ import { RouterLink } from 'src/routes/components';
 // components
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { ROLE_PERMISSION } from 'src/config-global';
+import { RoleBasedGuard } from 'src/auth/guard';
 
 // ----------------------------------------------------------------------
 
@@ -37,6 +39,8 @@ export default function StreamDetailsToolbar({
   ...other
 }: Props) {
   const popover = usePopover();
+
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS, ...ROLE_PERMISSION.RESTRICTED];
 
   return (
     <>
@@ -67,23 +71,25 @@ export default function StreamDetailsToolbar({
           </Tooltip>
         )} */}
 
-        <Tooltip title="Edit">
-          <IconButton component={RouterLink} href={editLink}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
-        </Tooltip>
+        <RoleBasedGuard roles={rolesAccess}>
+          <Tooltip title="Edit">
+            <IconButton component={RouterLink} href={editLink}>
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          </Tooltip>
 
-        <LoadingButton
-          color="inherit"
-          variant="contained"
-          loading={!publish}
-          loadingIndicator="Loading…"
-          endIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
-          onClick={popover.onOpen}
-          sx={{ textTransform: 'capitalize' }}
-        >
-          {publish}
-        </LoadingButton>
+          <LoadingButton
+            color="inherit"
+            variant="contained"
+            loading={!publish}
+            loadingIndicator="Loading…"
+            endIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
+            onClick={popover.onOpen}
+            sx={{ textTransform: 'capitalize' }}
+          >
+            {publish}
+          </LoadingButton>
+        </RoleBasedGuard>
       </Stack>
 
       <CustomPopover
@@ -92,22 +98,24 @@ export default function StreamDetailsToolbar({
         arrow="top-right"
         sx={{ width: 140 }}
       >
-        {publishOptions.filter((option) => option.value !== 'scheduled').map((option) => (
-          <MenuItem
-            key={option.value}
-            selected={option.value === publish}
-            onClick={() => {
-              popover.onClose();
-              onChangePublish(option.value);
-            }}
-          >
-            {option.value === 'published' && <Iconify icon="eva:cloud-upload-fill" />}
-            {option.value === 'draft' && <Iconify icon="solar:file-text-bold" />}
-            {option.value === 'private' && <Iconify icon="eva:clock-fill" />}
-            {option.value === 'archived' && <Iconify icon="eva:archive-fill" />}
-            {option.label}
-          </MenuItem>
-        ))}
+        {publishOptions
+          .filter((option) => option.value !== 'scheduled')
+          .map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={option.value === publish}
+              onClick={() => {
+                popover.onClose();
+                onChangePublish(option.value);
+              }}
+            >
+              {option.value === 'published' && <Iconify icon="eva:cloud-upload-fill" />}
+              {option.value === 'draft' && <Iconify icon="solar:file-text-bold" />}
+              {option.value === 'private' && <Iconify icon="eva:clock-fill" />}
+              {option.value === 'archived' && <Iconify icon="eva:archive-fill" />}
+              {option.label}
+            </MenuItem>
+          ))}
       </CustomPopover>
     </>
   );

@@ -9,6 +9,9 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 // api
 import { useGetUser } from 'src/api/user';
 
+import { ROLE_PERMISSION } from 'src/config-global';
+import { RoleBasedGuard } from 'src/auth/guard';
+
 import UserNewEditForm from '../user-new-edit-form';
 
 // ----------------------------------------------------------------------
@@ -20,9 +23,11 @@ type Props = {
 export default function UserEditView({ id }: Props) {
   const settings = useSettingsContext();
 
-  const { user: currentUser, userLoading } = useGetUser(id as number);
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS];
 
-  if (userLoading) {
+  const { user: currentUser, userLoading, userError } = useGetUser(id as number);
+
+  if (userLoading && !userError) {
     return (
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <Skeleton />
@@ -31,27 +36,29 @@ export default function UserEditView({ id }: Props) {
   }
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="Edit"
-        links={[
-          {
-            name: 'Dashboard',
-            href: paths.dashboard.root,
-          },
-          {
-            name: 'User',
-            href: paths.dashboard.user.root,
-          },
-          { name: currentUser?.name },
-        ]}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      />
+    <RoleBasedGuard hasContent roles={rolesAccess} sx={{ py: 10 }}>
+      <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+        <CustomBreadcrumbs
+          heading="Edit"
+          links={[
+            {
+              name: 'Dashboard',
+              href: paths.dashboard.root,
+            },
+            {
+              name: 'User',
+              href: paths.dashboard.user.root,
+            },
+            { name: currentUser?.name },
+          ]}
+          sx={{
+            mb: { xs: 3, md: 5 },
+          }}
+        />
 
-      {/* {userAuth?.role.name.toLowerCase() === 'admin' && <UserNewEditForm currentUser={currentUser} />} */}
-      <UserNewEditForm currentUser={currentUser} />
-    </Container>
+        {/* {userAuth?.role.name.toLowerCase() === 'admin' && <UserNewEditForm currentUser={currentUser} />} */}
+        <UserNewEditForm currentUser={currentUser} />
+      </Container>
+    </RoleBasedGuard>
   );
 }

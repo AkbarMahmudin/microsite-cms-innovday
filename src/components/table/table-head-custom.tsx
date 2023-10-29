@@ -6,6 +6,8 @@ import Checkbox from '@mui/material/Checkbox';
 import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import { RoleBasedGuard } from 'src/auth/guard';
+import { ROLE_PERMISSION } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
@@ -44,19 +46,23 @@ export default function TableHeadCustom({
   onSelectAllRows,
   sx,
 }: Props) {
+  const rolesAccess = [...ROLE_PERMISSION.ALL_ACCESS];
+
   return (
     <TableHead sx={sx}>
       <TableRow>
         {onSelectAllRows && (
-          <TableCell padding="checkbox">
-            <Checkbox
-              indeterminate={!!numSelected && numSelected < rowCount}
-              checked={!!rowCount && numSelected === rowCount}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                onSelectAllRows(event.target.checked)
-              }
-            />
-          </TableCell>
+          <RoleBasedGuard roles={rolesAccess}>
+            <TableCell padding="checkbox">
+              <Checkbox
+                indeterminate={!!numSelected && numSelected < rowCount}
+                checked={!!rowCount && numSelected === rowCount}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  onSelectAllRows(event.target.checked)
+                }
+              />
+            </TableCell>
+          </RoleBasedGuard>
         )}
 
         {headLabel.map((headCell) => (
