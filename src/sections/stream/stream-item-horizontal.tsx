@@ -166,7 +166,7 @@ export default function StreamItemHorizontal({ stream, onDeleteStream }: Props) 
               <Iconify icon="eva:more-horizontal-fill" />
             </IconButton>
 
-            <Stack
+            {/* <Stack
               spacing={1.5}
               flexGrow={1}
               direction="row"
@@ -178,19 +178,19 @@ export default function StreamItemHorizontal({ stream, onDeleteStream }: Props) 
             >
               <Stack direction="row" alignItems="center">
                 <Iconify icon="eva:message-circle-fill" width={16} sx={{ mr: 0.5 }} />
-                {/* {fShortenNumber(totalComments)} */}
+                {fShortenNumber(totalComments)}
               </Stack>
 
               <Stack direction="row" alignItems="center">
                 <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
-                {/* {fShortenNumber(totalViews)} */}
+                {fShortenNumber(totalViews)}
               </Stack>
 
               <Stack direction="row" alignItems="center">
                 <Iconify icon="solar:share-bold" width={16} sx={{ mr: 0.5 }} />
-                {/* {fShortenNumber(totalShares)} */}
+                {fShortenNumber(totalShares)}
               </Stack>
-            </Stack>
+            </Stack> */}
           </Stack>
         </Stack>
       </Stack>

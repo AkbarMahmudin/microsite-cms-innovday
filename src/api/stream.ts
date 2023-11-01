@@ -3,7 +3,7 @@ import useSWR, { mutate } from 'swr';
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 const URL = endpoints.stream;
-const ACCESSTOKEN = sessionStorage.getItem('accessToken');
+const ACCESSTOKEN = localStorage.getItem('accessToken');
 
 const options = {
   revalidateOnFocus: true,

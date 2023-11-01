@@ -95,6 +95,7 @@ export default function StreamListView() {
 
   const handleFilterPublish = useCallback(
     (event: React.SyntheticEvent, newValue: string) => {
+      handleFilters('page', 1);
       handleFilters('publish', newValue);
     },
     [handleFilters]
